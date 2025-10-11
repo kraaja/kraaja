@@ -6,7 +6,8 @@
     <title>KraaDev</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/umd.js"></script>
+    <!-- Tambahkan Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -38,7 +39,7 @@
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.75rem; background-color: var(--bg-dark-primary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); }
         
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
-        .mod-card { background-color: var(--bg-dark-secondary); border-radius: 8px; overflow: hidden; cursor: pointer; transition: transform 0.2s; }
+        .mod-card { background-color: var(--bg-dark-secondary); border-radius: 8px; overflow: hidden; cursor: pointer; transition: transform 0.2s; position: relative; }
         .mod-card:hover { transform: translateY(-5px); }
         .card-thumbnail { width: 100%; height: 160px; object-fit: cover; }
         .card-body { padding: 1rem; }
@@ -59,12 +60,6 @@
         .slider-btn.prev { left: 10px; }
         .slider-btn.next { right: 10px; }
         .slider-counter { text-align: center; margin-top: 0.5rem; color: var(--text-secondary); }
-
-        .user-list-item { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color); }
-        .user-list-item:last-child { border-bottom: none; }
-        .user-list-item img { width: 40px; height: 40px; border-radius: 50%; }
-        .user-info p { margin: 0; font-weight: 600; }
-        .user-info span { font-size: 0.9rem; color: var(--text-secondary); }
     </style>
 </head>
 <body>
@@ -73,7 +68,6 @@
             <header>
                 <h1>KraaDev</h1>
                 <div class="header-actions">
-                    <button id="view-users-btn" class="btn btn-secondary hidden"><i class="fa fa-users"></i> View Users</button>
                     <button id="upload-addon-btn" class="btn btn-primary hidden"><i class="fa fa-upload"></i> Upload Addon</button>
                     <div id="user-profile" class="hidden"></div>
                     <div id="login-button-container"></div>
@@ -141,35 +135,19 @@
         </div>
     </div>
 
-    <div id="view-users-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <div class="modal-header"><h2>Daftar Pengguna</h2><span id="close-view-users-modal-btn" class="close-btn">&times;</span></div>
-            <div id="user-list-container"></div>
-        </div>
-    </div>
-
     <script>
+        // ================== PENTING! Ganti dengan URL dan Kunci Supabase Anda ==================
+        const SUPABASE_URL = 'https://lulqcbwyuhrwonnkxhzp.supabase.co'; 
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1bHFjYnd5dWhyd29ubmt4aHpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxOTA1ODcsImV4cCI6MjA3NTc2NjU4N30.FjkYF7uqaEyQxwwIWPw6Sjw-mSxOd6vX9SoGjlSa2_I'; 
+        // =====================================================================================
+
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         window.onload = function() {
             const ADMIN_EMAIL = "dzaikraft@gmail.com";
             let currentUser = null;
             let isAdmin = false;
             let currentOpenAddonId = null;
-
-            function readFileAsDataURL(file) {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file);
-                });
-            }
-
-            function dataURLtoBlob(dataurl) {
-                if (!dataurl || !dataurl.includes(',')) { throw new Error("Invalid dataURL"); }
-                var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1], bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
-                while(n--){ u8arr[n] = bstr.charCodeAt(n); }
-                return new Blob([u8arr], {type:mime});
-            }
 
             function initializeApp() {
                 const storedUser = localStorage.getItem('currentUser');
@@ -185,7 +163,7 @@
                 } catch (error) { console.error("Gagal menginisialisasi Google Sign-In:", error); }
                 
                 updateLoginStateUI();
-                renderUI();
+                renderGrids();
             }
             
             async function handleCredentialResponse(response) {
@@ -193,16 +171,8 @@
                 currentUser = { name: payload.name, email: payload.email, picture: payload.picture };
                 localStorage.setItem('currentUser', JSON.stringify(currentUser));
                 isAdmin = currentUser.email === ADMIN_EMAIL;
-
-                const allUsers = await idbKeyval.get('userList') || [];
-                const userExists = allUsers.some(user => user.email === currentUser.email);
-                if (!userExists) {
-                    allUsers.push(currentUser);
-                    await idbKeyval.set('userList', allUsers);
-                }
-
                 updateLoginStateUI();
-                renderUI();
+                renderGrids();
             }
 
             function updateLoginStateUI() {
@@ -210,7 +180,6 @@
                 const logoutBtn = document.getElementById('logout-btn');
                 const userProfile = document.getElementById('user-profile');
                 const uploadBtn = document.getElementById('upload-addon-btn');
-                const viewUsersBtn = document.getElementById('view-users-btn');
 
                 if (currentUser) {
                     userProfile.innerHTML = `<img src="${currentUser.picture}" alt="User"><span>${currentUser.name}</span>`;
@@ -219,12 +188,10 @@
                     loginBtnContainer.innerHTML = '';
                     loginBtnContainer.classList.add('hidden');
                     uploadBtn.classList.remove('hidden');
-                    viewUsersBtn.classList.toggle('hidden', !isAdmin);
                 } else {
                     userProfile.classList.add('hidden');
                     logoutBtn.classList.add('hidden');
                     uploadBtn.classList.add('hidden');
-                    viewUsersBtn.classList.add('hidden');
                     loginBtnContainer.classList.remove('hidden');
                     try {
                         google.accounts.id.renderButton(loginBtnContainer, { theme: "outline", size: "large" });
@@ -232,24 +199,13 @@
                 }
             }
 
-            async function getStoredData() {
-                const approved = await idbKeyval.get('approvedAddons') || [];
-                const pending = await idbKeyval.get('pendingAddons') || [];
-                return { approved, pending };
-            }
-
-            async function saveData(approved, pending) {
-                await idbKeyval.set('approvedAddons', approved);
-                await idbKeyval.set('pendingAddons', pending);
-            }
-
-            function renderUI() {
-                updateLoginStateUI();
-                renderGrids();
-            }
-
             async function renderGrids() {
-                const { approved, pending } = await getStoredData();
+                const { data: allAddons, error } = await supabase.from('addons').select('*');
+                if (error) { console.error("Gagal mengambil addons:", error); return; }
+
+                const approved = allAddons.filter(a => a.status === 'approved');
+                const pending = allAddons.filter(a => a.status === 'pending');
+                
                 const modGrid = document.getElementById('mod-grid');
                 const pendingGrid = document.getElementById('pending-grid');
                 const searchQuery = document.getElementById('search-input').value.toLowerCase();
@@ -278,8 +234,12 @@
                 card.className = 'mod-card';
                 card.dataset.id = mod.id;
                 card.dataset.type = isPending ? 'pending' : 'approved';
-                const avgRating = mod.ratings.length ? (mod.ratings.reduce((a, b) => a + b, 0) / mod.ratings.length).toFixed(1) : 'N/A';
-                const downloadCount = (mod.downloadedBy && mod.downloadedBy.length) ? mod.downloadedBy.length : 0;
+
+                const ratings = mod.ratings || [];
+                const avgRating = ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : 'N/A';
+                const comments = mod.comments || [];
+                const downloadedBy = mod.downloaded_by || [];
+
                 let adminButtons = '';
                 if (isAdmin) {
                     if (isPending) {
@@ -290,75 +250,44 @@
                 }
                 card.innerHTML = `
                     ${adminButtons}
-                    <img src="${mod.image}" class="card-thumbnail">
+                    <img src="${mod.image_url}" class="card-thumbnail">
                     <div class="card-body">
                         <h3 class="card-title">${mod.name}</h3>
                         <div class="card-footer">
                             <span class="star-rating"><i class="fa fa-star"></i> ${avgRating}</span>
-                            <span><i class="fa fa-comments"></i> ${mod.comments.length}</span>
-                            <span><i class="fa fa-download"></i> ${downloadCount}</span>
+                            <span><i class="fa fa-comments"></i> ${comments.length}</span>
+                            <span><i class="fa fa-download"></i> ${downloadedBy.length}</span>
                         </div>
                     </div>`;
                 return card;
             }
 
             async function openDetailsModal(id, type) {
-                const { approved, pending } = await getStoredData();
-                const source = type === 'approved' ? approved : pending;
-                const addon = source.find(m => m.id === id);
-                if (!addon) return;
+                const { data: addon, error } = await supabase.from('addons').select('*').eq('id', id).single();
+                if (error || !addon) { console.error("Gagal menemukan addon:", error); return; }
 
                 currentOpenAddonId = id;
                 document.getElementById('details-title').textContent = addon.name;
                 document.getElementById('details-description').textContent = addon.description;
 
                 const sliderContainer = document.getElementById('preview-slider-container');
-                if (addon.previewImages && addon.previewImages.length > 0) {
+                const previewImages = addon.preview_image_urls || [];
+                if (previewImages.length > 0) {
                     let currentIndex = 0;
-                    sliderContainer.innerHTML = `<div class="preview-slider"><img id="slider-img" src="${addon.previewImages[0]}" class="slider-image"><button class="slider-btn prev">&lt;</button><button class="slider-btn next">&gt;</button></div><div id="slider-counter" class="slider-counter"></div>`;
+                    sliderContainer.innerHTML = `<div class="preview-slider"><img id="slider-img" src="${previewImages[0]}" class="slider-image"><button class="slider-btn prev">&lt;</button><button class="slider-btn next">&gt;</button></div><div id="slider-counter" class="slider-counter"></div>`;
                     const imgElement = sliderContainer.querySelector('#slider-img');
                     const counterElement = sliderContainer.querySelector('#slider-counter');
-                    const updateSlider = () => { imgElement.src = addon.previewImages[currentIndex]; counterElement.textContent = `${currentIndex + 1} / ${addon.previewImages.length}`; };
-                    sliderContainer.querySelector('.next').addEventListener('click', () => { currentIndex = (currentIndex + 1) % addon.previewImages.length; updateSlider(); });
-                    sliderContainer.querySelector('.prev').addEventListener('click', () => { currentIndex = (currentIndex - 1 + addon.previewImages.length) % addon.previewImages.length; updateSlider(); });
+                    const updateSlider = () => { imgElement.src = previewImages[currentIndex]; counterElement.textContent = `${currentIndex + 1} / ${previewImages.length}`; };
+                    sliderContainer.querySelector('.next').addEventListener('click', () => { currentIndex = (currentIndex + 1) % previewImages.length; updateSlider(); });
+                    sliderContainer.querySelector('.prev').addEventListener('click', () => { currentIndex = (currentIndex - 1 + previewImages.length) % previewImages.length; updateSlider(); });
                     updateSlider();
                 } else {
                     sliderContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Gambar preview tidak tersedia.</p>';
                 }
                 
                 const downloadBtn = document.getElementById('download-btn');
-                const newDownloadBtn = downloadBtn.cloneNode(true);
-                downloadBtn.parentNode.replaceChild(newDownloadBtn, downloadBtn);
-
-                newDownloadBtn.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    if (!currentUser) {
-                        alert("Anda harus login untuk mengunduh addon ini.");
-                        return;
-                    }
-
-                    let { approved: allApproved, pending: allPending } = await getStoredData();
-                    let sourceList = (type === 'approved') ? allApproved : allPending;
-                    let targetAddon = sourceList.find(m => m.id === id);
-
-                    if (targetAddon) {
-                        if (!targetAddon.downloadedBy) { targetAddon.downloadedBy = []; }
-                        if (!targetAddon.downloadedBy.includes(currentUser.email)) {
-                            targetAddon.downloadedBy.push(currentUser.email);
-                            await saveData(allApproved, allPending);
-                            await renderGrids();
-                        }
-                    }
-
-                    try {
-                        const blob = dataURLtoBlob(addon.file);
-                        const url = window.URL.createObjectURL(blob);
-                        const tempLink = document.createElement('a');
-                        tempLink.href = url; tempLink.setAttribute('download', addon.fileName);
-                        document.body.appendChild(tempLink); tempLink.click();
-                        document.body.removeChild(tempLink); window.URL.revokeObjectURL(url);
-                    } catch (error) { console.error("Gagal mengunduh:", error); alert("Gagal mengunduh file."); }
-                });
+                downloadBtn.href = addon.file_url;
+                downloadBtn.setAttribute('download', addon.file_name);
                 
                 document.getElementById('comment-form').style.display = currentUser ? 'block' : 'none';
                 document.querySelector('.rating-section').style.display = currentUser ? 'block' : 'none';
@@ -368,7 +297,8 @@
             }
 
             function renderRatingDisplay(addon) {
-                const avg = addon.ratings.length ? (addon.ratings.reduce((a, b) => a + b, 0) / addon.ratings.length) : 0;
+                const ratings = addon.ratings || [];
+                const avg = ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length) : 0;
                 const container = document.getElementById('details-rating-display');
                 let stars = '';
                 for (let i = 1; i <= 5; i++) stars += `<i class="fa${i <= avg ? 's' : 'r'} fa-star"></i>`;
@@ -383,9 +313,10 @@
             }
             
             function renderComments(addon) {
+                const comments = addon.comments || [];
                 const list = document.getElementById('details-comments-list');
-                list.innerHTML = addon.comments.length ? '' : '<p>Belum ada komentar.</p>';
-                addon.comments.forEach(c => {
+                list.innerHTML = comments.length ? '' : '<p>Belum ada komentar.</p>';
+                comments.forEach(c => {
                     const div = document.createElement('div'); div.className = 'comment';
                     div.innerHTML = `<img src="${c.user.picture}"><div><span class="comment-author">${c.user.name}</span><p>${c.text}</p></div>`;
                     list.appendChild(div);
@@ -398,57 +329,67 @@
             document.getElementById('logout-btn').addEventListener('click', () => {
                 localStorage.removeItem('currentUser');
                 if (typeof google !== 'undefined') google.accounts.id.disableAutoSelect();
-                initializeApp();
+                location.reload();
             });
             document.getElementById('upload-addon-btn').addEventListener('click', () => document.getElementById('upload-modal').classList.remove('hidden'));
             document.getElementById('close-upload-modal-btn').addEventListener('click', () => document.getElementById('upload-modal').classList.add('hidden'));
             document.getElementById('close-details-modal-btn').addEventListener('click', () => document.getElementById('details-modal').classList.add('hidden'));
-            document.getElementById('close-view-users-modal-btn').addEventListener('click', () => document.getElementById('view-users-modal').classList.add('hidden'));
-            
-            document.getElementById('view-users-btn').addEventListener('click', async () => {
-                const container = document.getElementById('user-list-container');
-                const allUsers = await idbKeyval.get('userList') || [];
-                container.innerHTML = '';
-                if (allUsers.length > 0) {
-                    allUsers.forEach(user => {
-                        const userEl = document.createElement('div');
-                        userEl.className = 'user-list-item';
-                        userEl.innerHTML = `<img src="${user.picture}" alt="${user.name}"><div class="user-info"><p>${user.name}</p><span>${user.email}</span></div>`;
-                        container.appendChild(userEl);
-                    });
-                } else {
-                    container.innerHTML = '<p>Belum ada pengguna yang login.</p>';
-                }
-                document.getElementById('view-users-modal').classList.remove('hidden');
-            });
             
             document.getElementById('upload-form').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 if (!currentUser) { alert("Anda harus login untuk mengupload."); return; }
+
+                const submitButton = e.target.querySelector('button[type="submit"]');
+                submitButton.disabled = true;
+                submitButton.textContent = 'Mengunggah...';
+
                 const imageFile = document.getElementById('addon-image').files[0];
                 const addonFile = document.getElementById('addon-file').files[0];
                 const previewFiles = document.getElementById('addon-previews').files;
                 if (!imageFile || !addonFile) { alert("Gambar utama dan file addon wajib diisi!"); return; }
 
                 try {
-                    const mainImagePromise = readFileAsDataURL(imageFile);
-                    const addonFilePromise = readFileAsDataURL(addonFile);
-                    const previewImagesPromises = Array.from(previewFiles).map(readFileAsDataURL);
-                    const [mainImageResult, addonFileResult, previewImagesResults] = await Promise.all([mainImagePromise, addonFilePromise, Promise.all(previewImagesPromises)]);
+                    // 1. Upload file addon
+                    const addonFilePath = `public/${Date.now()}_${addonFile.name}`;
+                    const { error: addonUploadError } = await supabase.storage.from('addon-files').upload(addonFilePath, addonFile);
+                    if (addonUploadError) throw addonUploadError;
+                    const { data: { publicUrl: addonPublicUrl } } = supabase.storage.from('addon-files').getPublicUrl(addonFilePath);
                     
-                    const { approved, pending } = await getStoredData();
-                    pending.push({
-                        id: Date.now(), name: document.getElementById('addon-name').value, description: document.getElementById('addon-description').value,
-                        category: document.getElementById('addon-category').value, image: mainImageResult, file: addonFileResult,
-                        fileName: addonFile.name, uploader: currentUser, ratings: [], comments: [],
-                        previewImages: previewImagesResults, downloadedBy: []
+                    // 2. Upload gambar utama
+                    const imageFilePath = `public/${Date.now()}_${imageFile.name}`;
+                    const { error: imageUploadError } = await supabase.storage.from('addon-images').upload(imageFilePath, imageFile);
+                    if (imageUploadError) throw imageUploadError;
+                    const { data: { publicUrl: imagePublicUrl } } = supabase.storage.from('addon-images').getPublicUrl(imageFilePath);
+
+                    // 3. Upload gambar preview
+                    const previewImageUrls = [];
+                    for (const file of previewFiles) {
+                        const previewPath = `public/previews/${Date.now()}_${file.name}`;
+                        const { error: previewError } = await supabase.storage.from('addon-images').upload(previewPath, file);
+                        if (previewError) { console.warn('Gagal mengupload salah satu preview:', previewError); continue; }
+                        const { data: { publicUrl: previewUrl } } = supabase.storage.from('addon-images').getPublicUrl(previewPath);
+                        previewImageUrls.push(previewUrl);
+                    }
+
+                    // 4. Simpan metadata ke database
+                    const { error: insertError } = await supabase.from('addons').insert({
+                        name: document.getElementById('addon-name').value, description: document.getElementById('addon-description').value,
+                        category: document.getElementById('addon-category').value, image_url: imagePublicUrl, file_url: addonPublicUrl,
+                        file_name: addonFile.name, uploader_email: currentUser.email, preview_image_urls: previewImageUrls
                     });
-                    await saveData(approved, pending);
+                    if (insertError) throw insertError;
+                    
                     alert('Addon berhasil dikirim untuk persetujuan!');
                     document.getElementById('upload-form').reset();
                     document.getElementById('upload-modal').classList.add('hidden');
                     await renderGrids();
-                } catch (error) { console.error("Gagal membaca file:", error); alert("Terjadi kesalahan saat memproses file."); }
+                } catch (error) {
+                    console.error("Gagal mengupload addon:", error);
+                    alert("Terjadi kesalahan saat mengupload addon: " + error.message);
+                } finally {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Kirim';
+                }
             });
             
             document.body.addEventListener('click', async (e) => {
@@ -457,16 +398,25 @@
                     await openDetailsModal(parseInt(card.dataset.id), card.dataset.type);
                     return;
                 }
+
                 const button = e.target.closest('[data-action]');
                 if (button && isAdmin) {
                     const id = parseInt(button.dataset.id);
                     const action = button.dataset.action;
-                    let { approved, pending } = await getStoredData();
-                    if (action === 'approve') { const addon = pending.find(m => m.id === id); if (addon) { approved.push(addon); pending = pending.filter(m => m.id !== id); } }
-                    else if (action === 'reject') { pending = pending.filter(m => m.id !== id); }
-                    else if (action === 'delete') { approved = approved.filter(m => m.id !== id); }
-                    await saveData(approved, pending);
-                    await renderGrids();
+                    
+                    let query;
+                    if (action === 'approve') {
+                        query = supabase.from('addons').update({ status: 'approved' }).eq('id', id);
+                    } else if (action === 'reject' || action === 'delete') {
+                        // TODO: Hapus file dari Storage untuk menghemat ruang
+                        query = supabase.from('addons').delete().eq('id', id);
+                    }
+
+                    if(query) {
+                        const { error } = await query;
+                        if (error) console.error(`Aksi ${action} gagal:`, error);
+                        else await renderGrids();
+                    }
                 }
             });
             
@@ -474,26 +424,29 @@
                 e.preventDefault();
                 if (!currentUser || !currentOpenAddonId) return;
                 const text = document.getElementById('comment-text').value;
-                let { approved, pending } = await getStoredData();
-                let addon = approved.find(m => m.id === currentOpenAddonId);
-                if (addon) {
-                    addon.comments.push({ user: currentUser, text });
-                    await saveData(approved, pending);
-                    renderComments(addon); e.target.reset();
-                }
+
+                const { data: addonData, error: fetchError } = await supabase.from('addons').select('comments').eq('id', currentOpenAddonId).single();
+                if (fetchError) { console.error(fetchError); return; }
+
+                const updatedComments = [...(addonData.comments || []), { user: currentUser, text }];
+                
+                const { data, error: updateError } = await supabase.from('addons').update({ comments: updatedComments }).eq('id', currentOpenAddonId).select().single();
+                if (updateError) { console.error("Gagal mengirim komentar:", updateError); } 
+                else { renderComments(data); e.target.reset(); }
             });
             
             document.getElementById('details-rating-interactive').addEventListener('click', async e => {
                 if(e.target.matches('.fa-star') && currentUser && currentOpenAddonId) {
                     const rating = parseInt(e.target.dataset.value);
-                    let { approved, pending } = await getStoredData();
-                    let addon = approved.find(m => m.id === currentOpenAddonId);
-                    if (addon) {
-                        addon.ratings.push(rating);
-                        await saveData(approved, pending);
-                        renderRatingDisplay(addon);
-                        alert(`Anda memberi rating ${rating} bintang!`);
-                    }
+                    
+                    const { data: addonData, error: fetchError } = await supabase.from('addons').select('ratings').eq('id', currentOpenAddonId).single();
+                    if (fetchError) { console.error(fetchError); return; }
+
+                    const updatedRatings = [...(addonData.ratings || []), rating];
+
+                    const { data, error: updateError } = await supabase.from('addons').update({ ratings: updatedRatings }).eq('id', currentOpenAddonId).select().single();
+                    if (updateError) { console.error("Gagal memberi rating:", updateError); } 
+                    else { renderRatingDisplay(data); alert(`Anda memberi rating ${rating} bintang!`); }
                 }
             });
 
