@@ -141,7 +141,8 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1bHFjYnd5dWhyd29ubmt4aHpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxOTA1ODcsImV4cCI6MjA3NTc2NjU4N30.FjkYF7uqaEyQxwwIWPw6Sjw-mSxOd6vX9SoGjlSa2_I'; 
         // =====================================================================================
 
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // Perbaikan: Ganti nama variabel agar tidak konflik
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         window.onload = function() {
             const ADMIN_EMAIL = "dzaikraft@gmail.com";
@@ -200,7 +201,7 @@
             }
 
             async function renderGrids() {
-                const { data: allAddons, error } = await supabase.from('addons').select('*');
+                const { data: allAddons, error } = await supabaseClient.from('addons').select('*');
                 if (error) { console.error("Gagal mengambil addons:", error); return; }
 
                 const approved = allAddons.filter(a => a.status === 'approved');
@@ -263,7 +264,7 @@
             }
 
             async function openDetailsModal(id, type) {
-                const { data: addon, error } = await supabase.from('addons').select('*').eq('id', id).single();
+                const { data: addon, error } = await supabaseClient.from('addons').select('*').eq('id', id).single();
                 if (error || !addon) { console.error("Gagal menemukan addon:", error); return; }
 
                 currentOpenAddonId = id;
@@ -351,28 +352,28 @@
                 try {
                     // 1. Upload file addon
                     const addonFilePath = `public/${Date.now()}_${addonFile.name}`;
-                    const { error: addonUploadError } = await supabase.storage.from('addon-files').upload(addonFilePath, addonFile);
+                    const { error: addonUploadError } = await supabaseClient.storage.from('addon-files').upload(addonFilePath, addonFile);
                     if (addonUploadError) throw addonUploadError;
-                    const { data: { publicUrl: addonPublicUrl } } = supabase.storage.from('addon-files').getPublicUrl(addonFilePath);
+                    const { data: { publicUrl: addonPublicUrl } } = supabaseClient.storage.from('addon-files').getPublicUrl(addonFilePath);
                     
                     // 2. Upload gambar utama
                     const imageFilePath = `public/${Date.now()}_${imageFile.name}`;
-                    const { error: imageUploadError } = await supabase.storage.from('addon-images').upload(imageFilePath, imageFile);
+                    const { error: imageUploadError } = await supabaseClient.storage.from('addon-images').upload(imageFilePath, imageFile);
                     if (imageUploadError) throw imageUploadError;
-                    const { data: { publicUrl: imagePublicUrl } } = supabase.storage.from('addon-images').getPublicUrl(imageFilePath);
+                    const { data: { publicUrl: imagePublicUrl } } = supabaseClient.storage.from('addon-images').getPublicUrl(imageFilePath);
 
                     // 3. Upload gambar preview
                     const previewImageUrls = [];
                     for (const file of previewFiles) {
                         const previewPath = `public/previews/${Date.now()}_${file.name}`;
-                        const { error: previewError } = await supabase.storage.from('addon-images').upload(previewPath, file);
+                        const { error: previewError } = await supabaseClient.storage.from('addon-images').upload(previewPath, file);
                         if (previewError) { console.warn('Gagal mengupload salah satu preview:', previewError); continue; }
-                        const { data: { publicUrl: previewUrl } } = supabase.storage.from('addon-images').getPublicUrl(previewPath);
+                        const { data: { publicUrl: previewUrl } } = supabaseClient.storage.from('addon-images').getPublicUrl(previewPath);
                         previewImageUrls.push(previewUrl);
                     }
 
                     // 4. Simpan metadata ke database
-                    const { error: insertError } = await supabase.from('addons').insert({
+                    const { error: insertError } = await supabaseClient.from('addons').insert({
                         name: document.getElementById('addon-name').value, description: document.getElementById('addon-description').value,
                         category: document.getElementById('addon-category').value, image_url: imagePublicUrl, file_url: addonPublicUrl,
                         file_name: addonFile.name, uploader_email: currentUser.email, preview_image_urls: previewImageUrls
@@ -406,10 +407,10 @@
                     
                     let query;
                     if (action === 'approve') {
-                        query = supabase.from('addons').update({ status: 'approved' }).eq('id', id);
+                        query = supabaseClient.from('addons').update({ status: 'approved' }).eq('id', id);
                     } else if (action === 'reject' || action === 'delete') {
                         // TODO: Hapus file dari Storage untuk menghemat ruang
-                        query = supabase.from('addons').delete().eq('id', id);
+                        query = supabaseClient.from('addons').delete().eq('id', id);
                     }
 
                     if(query) {
@@ -425,12 +426,12 @@
                 if (!currentUser || !currentOpenAddonId) return;
                 const text = document.getElementById('comment-text').value;
 
-                const { data: addonData, error: fetchError } = await supabase.from('addons').select('comments').eq('id', currentOpenAddonId).single();
+                const { data: addonData, error: fetchError } = await supabaseClient.from('addons').select('comments').eq('id', currentOpenAddonId).single();
                 if (fetchError) { console.error(fetchError); return; }
 
                 const updatedComments = [...(addonData.comments || []), { user: currentUser, text }];
                 
-                const { data, error: updateError } = await supabase.from('addons').update({ comments: updatedComments }).eq('id', currentOpenAddonId).select().single();
+                const { data, error: updateError } = await supabaseClient.from('addons').update({ comments: updatedComments }).eq('id', currentOpenAddonId).select().single();
                 if (updateError) { console.error("Gagal mengirim komentar:", updateError); } 
                 else { renderComments(data); e.target.reset(); }
             });
@@ -439,12 +440,12 @@
                 if(e.target.matches('.fa-star') && currentUser && currentOpenAddonId) {
                     const rating = parseInt(e.target.dataset.value);
                     
-                    const { data: addonData, error: fetchError } = await supabase.from('addons').select('ratings').eq('id', currentOpenAddonId).single();
+                    const { data: addonData, error: fetchError } = await supabaseClient.from('addons').select('ratings').eq('id', currentOpenAddonId).single();
                     if (fetchError) { console.error(fetchError); return; }
 
                     const updatedRatings = [...(addonData.ratings || []), rating];
 
-                    const { data, error: updateError } = await supabase.from('addons').update({ ratings: updatedRatings }).eq('id', currentOpenAddonId).select().single();
+                    const { data, error: updateError } = await supabaseClient.from('addons').update({ ratings: updatedRatings }).eq('id', currentOpenAddonId).select().single();
                     if (updateError) { console.error("Gagal memberi rating:", updateError); } 
                     else { renderRatingDisplay(data); alert(`Anda memberi rating ${rating} bintang!`); }
                 }
