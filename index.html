@@ -3,225 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BlueForge - Fungsional</title>
+    <title>BlueForge - Real Upload</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    
     <style>
-        /* CSS DARI SEBELUMNYA, TIDAK ADA PERUBAHAN BESAR */
+        /* CSS TIDAK BERUBAH DARI SEBELUMNYA */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        :root {
-            --bg-dark-primary: #0D1117; --bg-dark-secondary: #161B22; --bg-dark-tertiary: #21262D;
-            --border-color: #30363D; --text-primary: #E6EDF3; --text-secondary: #8B949E;
-            --accent-blue: #2F81F7; --accent-blue-hover: #1F6FEB; --tag-bg: #1A3A69;
-        }
+        :root { --bg-dark-primary: #0D1117; --bg-dark-secondary: #161B22; --border-color: #30363D; --text-primary: #E6EDF3; --text-secondary: #8B949E; --accent-blue: #2F81F7; --accent-blue-hover: #1F6FEB; --tag-bg: #1A3A69;}
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark-primary); color: var(--text-primary); }
-        a { color: var(--accent-blue); text-decoration: none; }
-        img { max-width: 100%; display: block; }
-        .container { max-width: 1400px; margin: 0 auto; padding: 0 2rem; }
-        .main-header { background-color: var(--bg-dark-secondary); border-bottom: 1px solid var(--border-color); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
-        .header-left { display: flex; align-items: center; gap: 2rem; }
-        .logo { font-size: 1.8rem; font-weight: 700; color: var(--accent-blue); }
-        .search-bar { flex-grow: 1; margin: 0 2rem; }
-        #search-input { width: 100%; padding: 0.75rem 1rem; background-color: var(--bg-dark-primary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-size: 1rem; }
-        .header-right { display: flex; align-items: center; gap: 1rem; }
-        .btn { padding: 0.7rem 1.2rem; border-radius: 6px; font-weight: 600; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        .upload-section { background-color: var(--bg-dark-secondary); padding: 2rem; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 2rem; }
+        .upload-section h2 { font-size: 2rem; margin-bottom: 1.5rem; text-align: center; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary); }
+        .form-group input, .form-group select { width: 100%; padding: 0.75rem 1rem; background-color: var(--bg-dark-primary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-size: 1rem; }
+        .btn { padding: 0.8rem 1.5rem; border-radius: 6px; font-weight: 600; cursor: pointer; border: none; text-align: center; display: block; width: 100%; }
         .btn-primary { background-color: var(--accent-blue); color: white; }
-        .hero-section { background: linear-gradient(rgba(13, 17, 23, 0.7), rgba(13, 17, 23, 0.9)), url('https://via.placeholder.com/1600x300.png/0D1117/2F81F7?text=Minecraft+Bedrock') center/cover; padding: 4rem 2rem; text-align: center; }
-        .hero-section h1 { font-size: 3rem; font-weight: 700; }
-        .filter-controls { background-color: var(--bg-dark-secondary); padding: 1rem 2rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
-        .filter-tabs ul { list-style: none; display: flex; gap: 1.5rem; }
-        .filter-tabs a { display: block; padding: 0.5rem; color: var(--text-secondary); font-weight: 600; }
-        .filter-tabs a.active { color: var(--accent-blue); }
-        .category-filter label { font-weight: 600; margin-right: 0.5rem; }
-        #category-filter { padding: 0.5rem; background-color: var(--bg-dark-primary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; }
-        .main-content { padding: 2rem 0; }
         #mod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
         .mod-card { background-color: var(--bg-dark-secondary); border: 1px solid var(--border-color); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; }
         .card-thumbnail { width: 100%; height: 160px; object-fit: cover; }
-        .card-body { padding: 1rem; display: flex; flex-direction: column; flex-grow: 1; }
-        .card-title { font-size: 1.25rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem; }
+        .card-body { padding: 1rem; flex-grow: 1; }
+        .card-title { font-size: 1.25rem; font-weight: 600; }
         .card-author { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem; }
         .card-tags { margin-top: auto; display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
-        .tag { background-color: var(--tag-bg); color: var(--accent-blue); padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.8rem; font-weight: 500; }
-        .card-footer { border-top: 1px solid var(--border-color); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: var(--text-secondary); background-color: var(--bg-dark-tertiary); }
-        .card-footer span { display: flex; align-items: center; gap: 0.5rem; }
-        .main-footer { text-align: center; padding: 2rem; margin-top: 2rem; background-color: var(--bg-dark-secondary); border-top: 1px solid var(--border-color); color: var(--text-secondary); }
+        .tag { background-color: var(--tag-bg); color: var(--accent-blue); padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.8rem; }
+        .card-footer { border-top: 1px solid var(--border-color); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: var(--text-secondary); }
     </style>
 </head>
 <body>
-
-    <header class="main-header">
-        <div class="header-left">
-            <a href="#" class="logo">BlueForge</a>
-        </div>
-        <div class="search-bar">
-            <!-- ID DITAMBAHKAN UNTUK JAVASCRIPT -->
-            <input type="text" id="search-input" placeholder="Cari mod berdasarkan nama...">
-        </div>
-        <div class="header-right">
-            <a href="#" class="btn btn-primary">Install BlueForge</a>
-            <i class="fa fa-user-circle" style="font-size: 2rem; color: var(--text-secondary);"></i>
-        </div>
-    </header>
-    
-    <main>
-        <section class="hero-section">
-            <h1>Minecraft Bedrock Edition</h1>
+    <div class="container">
+        <section class="upload-section">
+            <h2><i class="fa fa-upload"></i> Upload Your Addon</h2>
+            <form id="upload-form">
+                <div class="form-group">
+                    <label for="addon-title">Addon Title</label>
+                    <input type="text" id="addon-title" required>
+                </div>
+                <div class="form-group">
+                    <label for="addon-author">Author Name</label>
+                    <input type="text" id="addon-author" required>
+                </div>
+                <div class="form-group">
+                    <label for="addon-category">Category</label>
+                    <select id="addon-category" required>
+                        <option value="Worlds">Worlds</option>
+                        <option value="Mobs">Mobs</option>
+                        <option value="Technology">Technology</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="addon-file">Addon File (.mcpack, .zip)</label>
+                    <input type="file" id="addon-file" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Addon</button>
+            </form>
         </section>
 
-        <!-- KONTROL FILTER DITAMBAHKAN -->
-        <div class="filter-controls">
-            <nav class="filter-tabs">
-                <ul>
-                    <li><a href="#" class="active">Featured</a></li>
-                    <li><a href="#">Popular</a></li>
-                </ul>
-            </nav>
-            <div class="category-filter">
-                <label for="category-filter">Filter by Category:</label>
-                <select id="category-filter">
-                    <option value="all">All Categories</option>
-                    <option value="Worlds">Worlds</option>
-                    <option value="Mobs">Mobs</option>
-                    <option value="Technology">Technology</option>
-                    <option value="Skins">Skins</option>
-                </select>
-            </div>
-        </div>
+        <section class="addon-list">
+            <h2 style="margin-bottom: 1.5rem;">Uploaded Addons</h2>
+            <div id="mod-grid"></div>
+        </section>
+    </div>
 
-        <div class="main-content container">
-            <!-- KONTEN INI AKAN DIISI OLEH JAVASCRIPT -->
-            <div id="mod-grid">
-                <!-- Kartu-kartu mod akan muncul di sini -->
-            </div>
-        </div>
-    </main>
-
-    <footer class="main-footer">
-        <p>&copy; 2025 BlueForge. Not affiliated with CurseForge or Minecraft.</p>
-    </footer>
-
-    <!-- ================== SCRIPT JAVASCRIPT ================== -->
     <script>
-        // LANGKAH 1: "DATABASE BOHONGAN" KITA
-        // Ini adalah array yang berisi objek-objek. Setiap objek adalah satu mod.
-        const modsData = [
-            {
-                title: "Expansive Biomes",
-                author: "TheBlueCoder",
-                tags: ["Worlds", "Add-on"],
-                downloads: 1200000,
-                updated: "2 days ago",
-                image: "https://via.placeholder.com/300x160.png/161B22/FFFFFF?text=World+Gen"
-            },
-            {
-                title: "Mythical Creatures",
-                author: "PixelPerfect",
-                tags: ["Mobs", "Add-on"],
-                downloads: 850000,
-                updated: "5 days ago",
-                image: "https://via.placeholder.com/300x160.png/161B22/FFFFFF?text=Creatures"
-            },
-            {
-                title: "Simple Machines",
-                author: "LogicCrafters",
-                tags: ["Technology"],
-                downloads: 2500000,
-                updated: "1 week ago",
-                image: "https://via.placeholder.com/300x160.png/161B22/FFFFFF?text=Technology"
-            },
-            {
-                title: "Dark Mode UI Pack",
-                author: "StyleMaster",
-                tags: ["Skins"],
-                downloads: 5100000,
-                updated: "3 hours ago",
-                image: "https://via.placeholder.com/300x160.png/161B22/FFFFFF?text=UI+Improvement"
-            },
-            {
-                title: "Advanced Farming",
-                author: "AgriTech",
-                tags: ["Technology", "Worlds"],
-                downloads: 950000,
-                updated: "1 day ago",
-                image: "https://via.placeholder.com/300x160.png/161B22/FFFFFF?text=Farming"
-            },
-            {
-                title: "Dragon Mounts PE",
-                author: "DragonRider",
-                tags: ["Mobs"],
-                downloads: 7800000,
-                updated: "1 month ago",
-                image: "https://via.placeholder.com/300x160.png/161B22/FFFFFF?text=Dragons"
-            }
-        ];
-
-        // Mengambil elemen-elemen HTML yang akan kita manipulasi
+        const uploadForm = document.getElementById('upload-form');
         const modGrid = document.getElementById('mod-grid');
-        const searchInput = document.getElementById('search-input');
-        const categoryFilter = document.getElementById('category-filter');
 
-        // LANGKAH 2: FUNGSI UNTUK MENAMPILKAN MODS KE HALAMAN
-        function displayMods(modsToDisplay) {
-            // Kosongkan dulu grid nya
-            modGrid.innerHTML = '';
+        // Fungsi untuk mengambil data dari server dan menampilkannya
+        async function fetchAndDisplayAddons() {
+            try {
+                const response = await fetch('/addons'); // Panggil endpoint GET /addons
+                const mods = await response.json();
 
-            // Loop melalui setiap mod di data, dan buat kartu HTML untuk masing-masing
-            modsToDisplay.forEach(mod => {
-                const modCard = document.createElement('div');
-                modCard.className = 'mod-card';
-
-                // Format angka download agar lebih mudah dibaca (e.g., 1.2M)
-                const formattedDownloads = (mod.downloads / 1000000).toFixed(1) + 'M';
-
-                // Buat HTML untuk tag-tagnya
-                const tagsHTML = mod.tags.map(tag => `<span class="tag">${tag}</span>`).join('');
-
-                modCard.innerHTML = `
-                    <img src="${mod.image}" alt="${mod.title}" class="card-thumbnail">
-                    <div class="card-body">
-                        <h3 class="card-title">${mod.title}</h3>
-                        <p class="card-author">by ${mod.author}</p>
-                        <div class="card-tags">${tagsHTML}</div>
-                    </div>
-                    <div class="card-footer">
-                        <span><i class="fa fa-download"></i> ${formattedDownloads}</span>
-                        <span>Updated: ${mod.updated}</span>
-                    </div>
-                `;
-                modGrid.appendChild(modCard);
-            });
-        }
-        
-        // FUNGSI UNTUK MEMFILTER MODS BERDASARKAN SEMUA INPUT
-        function filterAndDisplay() {
-            const searchTerm = searchInput.value.toLowerCase();
-            const selectedCategory = categoryFilter.value;
-
-            let filteredMods = modsData;
-
-            // Filter berdasarkan pencarian
-            if (searchTerm) {
-                filteredMods = filteredMods.filter(mod => mod.title.toLowerCase().includes(searchTerm));
+                modGrid.innerHTML = ''; // Kosongkan grid
+                mods.forEach(mod => {
+                    const modCard = document.createElement('div');
+                    modCard.className = 'mod-card';
+                    const tagsHTML = mod.tags.map(tag => `<span class="tag">${tag}</span>`).join('');
+                    modCard.innerHTML = `
+                        <img src="${mod.image}" alt="${mod.title}" class="card-thumbnail">
+                        <div class="card-body">
+                            <h3 class="card-title">${mod.title}</h3>
+                            <p class="card-author">by ${mod.author}</p>
+                            <div class="card-tags">${tagsHTML}</div>
+                        </div>
+                        <div class="card-footer">
+                            <span><i class="fa fa-download"></i> ${mod.downloads}</span>
+                            <span>Updated: ${mod.updated}</span>
+                        </div>
+                    `;
+                    modGrid.appendChild(modCard);
+                });
+            } catch (error) {
+                console.error('Error fetching addons:', error);
             }
-
-            // Filter berdasarkan kategori
-            if (selectedCategory !== 'all') {
-                filteredMods = filteredMods.filter(mod => mod.tags.includes(selectedCategory));
-            }
-
-            displayMods(filteredMods);
         }
 
-        // LANGKAH 3 & 4: MENAMBAHKAN EVENT LISTENER KE INPUT
-        // Ini akan menjalankan fungsi filter setiap kali pengguna mengetik atau memilih kategori
-        searchInput.addEventListener('keyup', filterAndDisplay);
-        categoryFilter.addEventListener('change', filterAndDisplay);
+        uploadForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
 
-        // Tampilkan semua mod saat halaman pertama kali dimuat
-        displayMods(modsData);
+            // Gunakan FormData untuk mengirim file dan data teks
+            const formData = new FormData();
+            formData.append('title', document.getElementById('addon-title').value);
+            formData.append('author', document.getElementById('addon-author').value);
+            formData.append('category', document.getElementById('addon-category').value);
+            formData.append('addonFile', document.getElementById('addon-file').files[0]);
 
+            try {
+                // Kirim data ke server menggunakan fetch
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData // Tidak perlu header Content-Type, FormData menanganinya
+                });
+
+                if (response.ok) {
+                    alert('Upload successful!');
+                    uploadForm.reset();
+                    fetchAndDisplayAddons(); // Refresh daftar addon
+                } else {
+                    alert('Upload failed. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                alert('An error occurred during upload.');
+            }
+        });
+
+        // Tampilkan semua addon saat halaman pertama kali dimuat
+        fetchAndDisplayAddons();
     </script>
 </body>
 </html>
