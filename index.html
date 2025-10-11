@@ -3,134 +3,502 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BlueForge - Real Upload</title>
+    <title>KraaDev</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/umd.js"></script>
+
     <style>
-        /* CSS TIDAK BERUBAH DARI SEBELUMNYA */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        :root { --bg-dark-primary: #0D1117; --bg-dark-secondary: #161B22; --border-color: #30363D; --text-primary: #E6EDF3; --text-secondary: #8B949E; --accent-blue: #2F81F7; --accent-blue-hover: #1F6FEB; --tag-bg: #1A3A69;}
+        :root {
+            --bg-dark-primary: #0D1117; --bg-dark-secondary: #161B22; --border-color: #30363D;
+            --text-primary: #E6EDF3; --text-secondary: #8B949E; --accent-blue: #2F81F7;
+            --accent-green: #238636; --accent-red: #DA3633; --star-color: #FFC107;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark-primary); color: var(--text-primary); }
+        .hidden { display: none !important; }
+
         .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
-        .upload-section { background-color: var(--bg-dark-secondary); padding: 2rem; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 2rem; }
-        .upload-section h2 { font-size: 2rem; margin-bottom: 1.5rem; text-align: center; }
-        .form-group { margin-bottom: 1.5rem; }
-        .form-group label { display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary); }
-        .form-group input, .form-group select { width: 100%; padding: 0.75rem 1rem; background-color: var(--bg-dark-primary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-size: 1rem; }
-        .btn { padding: 0.8rem 1.5rem; border-radius: 6px; font-weight: 600; cursor: pointer; border: none; text-align: center; display: block; width: 100%; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; }
+        header h1 { color: var(--accent-blue); }
+        .header-actions { display: flex; align-items: center; gap: 1rem; }
+        #user-profile { display: flex; align-items: center; gap: 10px; }
+        #user-profile img { width: 32px; height: 32px; border-radius: 50%; }
+        .btn { padding: 0.6rem 1.2rem; border-radius: 6px; font-weight: 600; cursor: pointer; border: none; text-decoration: none; display: inline-block; text-align: center; }
         .btn-primary { background-color: var(--accent-blue); color: white; }
-        #mod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
-        .mod-card { background-color: var(--bg-dark-secondary); border: 1px solid var(--border-color); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; }
+        .btn-secondary { background-color: var(--bg-dark-secondary); color: var(--text-primary); border: 1px solid var(--border-color); }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 500; }
+        .modal-content { background-color: var(--bg-dark-secondary); padding: 2rem; border-radius: 8px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .close-btn { font-size: 2rem; cursor: pointer; color: var(--text-secondary); }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.75rem; background-color: var(--bg-dark-primary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+        .mod-card { background-color: var(--bg-dark-secondary); border-radius: 8px; overflow: hidden; cursor: pointer; transition: transform 0.2s; }
+        .mod-card:hover { transform: translateY(-5px); }
         .card-thumbnail { width: 100%; height: 160px; object-fit: cover; }
-        .card-body { padding: 1rem; flex-grow: 1; }
-        .card-title { font-size: 1.25rem; font-weight: 600; }
-        .card-author { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem; }
-        .card-tags { margin-top: auto; display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
-        .tag { background-color: var(--tag-bg); color: var(--accent-blue); padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.8rem; }
-        .card-footer { border-top: 1px solid var(--border-color); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: var(--text-secondary); }
+        .card-body { padding: 1rem; }
+        .card-title { font-size: 1.25rem; }
+        .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; font-size: 0.9rem; color: var(--text-secondary); }
+        .star-rating { color: var(--star-color); }
+        
+        #details-description { margin: 1.5rem 0; line-height: 1.6; white-space: pre-wrap; }
+        .rating-section, .comments-section { margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem; }
+        .stars-interactive .fa-star { cursor: pointer; font-size: 1.5rem; }
+        .comment { display: flex; gap: 1rem; margin-bottom: 1rem; }
+        .comment img { width: 40px; height: 40px; border-radius: 50%; }
+        .comment-author { font-weight: 600; }
+
+        .preview-slider { position: relative; width: 100%; user-select: none; margin-bottom: 1rem; }
+        .slider-image { width: 100%; border-radius: 8px; }
+        .slider-btn { position: absolute; top: 50%; transform: translateY(-50%); background-color: rgba(0,0,0,0.5); color: white; border: none; font-size: 1.5rem; cursor: pointer; padding: 0.5rem 1rem; border-radius: 50%; }
+        .slider-btn.prev { left: 10px; }
+        .slider-btn.next { right: 10px; }
+        .slider-counter { text-align: center; margin-top: 0.5rem; color: var(--text-secondary); }
+
+        .user-list-item { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color); }
+        .user-list-item:last-child { border-bottom: none; }
+        .user-list-item img { width: 40px; height: 40px; border-radius: 50%; }
+        .user-info p { margin: 0; font-weight: 600; }
+        .user-info span { font-size: 0.9rem; color: var(--text-secondary); }
     </style>
 </head>
 <body>
-    <div class="container">
-        <section class="upload-section">
-            <h2><i class="fa fa-upload"></i> Upload Your Addon</h2>
-            <form id="upload-form">
-                <div class="form-group">
-                    <label for="addon-title">Addon Title</label>
-                    <input type="text" id="addon-title" required>
+    <div id="main-app">
+        <div class="container">
+            <header>
+                <h1>KraaDev</h1>
+                <div class="header-actions">
+                    <button id="view-users-btn" class="btn btn-secondary hidden"><i class="fa fa-users"></i> View Users</button>
+                    <button id="upload-addon-btn" class="btn btn-primary hidden"><i class="fa fa-upload"></i> Upload Addon</button>
+                    <div id="user-profile" class="hidden"></div>
+                    <div id="login-button-container"></div>
+                    <button id="logout-btn" class="btn btn-secondary hidden">Logout</button>
                 </div>
-                <div class="form-group">
-                    <label for="addon-author">Author Name</label>
-                    <input type="text" id="addon-author" required>
-                </div>
-                <div class="form-group">
-                    <label for="addon-category">Category</label>
-                    <select id="addon-category" required>
-                        <option value="Worlds">Worlds</option>
-                        <option value="Mobs">Mobs</option>
-                        <option value="Technology">Technology</option>
+            </header>
+            <section id="admin-panel" class="hidden" style="margin-bottom: 2rem;">
+                <h2 style="margin-bottom: 1rem;"><i class="fa fa-user-shield"></i> Menunggu Persetujuan</h2>
+                <div id="pending-grid" class="grid"></div>
+            </section>
+            <section class="addon-list">
+                <h2 style="margin-bottom: 1rem;">Silakan Cari Addon Yang Tersedia</h2>
+                <div class="filter-controls" style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
+                    <input type="search" id="search-input" placeholder="Cari berdasarkan nama..." style="flex-grow: 1; min-width: 200px; padding: 0.75rem; background-color: var(--bg-dark-primary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary);">
+                    <select id="category-filter" style="padding: 0.75rem; background-color: var(--bg-dark-primary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary);">
+                        <option value="all">Semua Kategori</option>
+                        <option value="Addon">Addon</option>
+                        <option value="Resource Pack">Resource Pack</option>
+                        <option value="Skin">Skin</option>
+                        <option value="World">World</option>
                     </select>
                 </div>
+                <div id="mod-grid" class="grid"></div>
+            </section>
+        </div>
+    </div>
+    
+    <div id="upload-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header"><h2>Submit Addon</h2><span id="close-upload-modal-btn" class="close-btn">&times;</span></div>
+            <form id="upload-form">
+                <div class="form-group"><label>Nama Addon</label><input type="text" id="addon-name" required></div>
+                <div class="form-group"><label>Deskripsi</label><textarea id="addon-description" required></textarea></div>
                 <div class="form-group">
-                    <label for="addon-file">Addon File (.mcpack, .zip)</label>
-                    <input type="file" id="addon-file" required>
+                    <label>Kategori</label>
+                    <select id="addon-category" required>
+                        <option value="Addon">Addon</option>
+                        <option value="Resource Pack">Resource Pack</option>
+                        <option value="Skin">Skin</option>
+                        <option value="World">World</option>
+                    </select>
                 </div>
-                <button type="submit" class="btn btn-primary">Submit Addon</button>
+                <div class="form-group"><label>Gambar Utama (Wajib)</label><input type="file" id="addon-image" accept="image/*" required></div>
+                <div class="form-group"><label>Gambar Preview (Opsional)</label><input type="file" id="addon-previews" accept="image/*" multiple></div>
+                <div class="form-group"><label>File Addon (.zip, .mcpack)</label><input type="file" id="addon-file" required></div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Kirim</button>
             </form>
-        </section>
+        </div>
+    </div>
 
-        <section class="addon-list">
-            <h2 style="margin-bottom: 1.5rem;">Uploaded Addons</h2>
-            <div id="mod-grid"></div>
-        </section>
+    <div id="details-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header"><h2 id="details-title"></h2><span id="close-details-modal-btn" class="close-btn">&times;</span></div>
+            <div id="preview-slider-container" style="margin-bottom: 1.5rem;"></div>
+            <div id="details-rating-display" class="star-rating"></div>
+            <a id="download-btn" href="#" class="btn btn-primary" style="width:100%; margin-top:1.5rem;">Download Addon</a>
+            <p id="details-description"></p>
+            <div class="rating-section"><h3>Beri Rating</h3><div id="details-rating-interactive" class="stars-interactive star-rating"></div></div>
+            <div class="comments-section"><h3>Komentar</h3><div id="details-comments-list"></div>
+                <form id="comment-form">
+                    <div class="form-group"><textarea id="comment-text" placeholder="Tulis komentar..." required></textarea></div>
+                    <button type="submit" class="btn btn-primary">Kirim</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-users-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header"><h2>Daftar Pengguna</h2><span id="close-view-users-modal-btn" class="close-btn">&times;</span></div>
+            <div id="user-list-container"></div>
+        </div>
     </div>
 
     <script>
-        const uploadForm = document.getElementById('upload-form');
-        const modGrid = document.getElementById('mod-grid');
+        window.onload = function() {
+            const ADMIN_EMAIL = "dzaikraft@gmail.com";
+            let currentUser = null;
+            let isAdmin = false;
+            let currentOpenAddonId = null;
 
-        // Fungsi untuk mengambil data dari server dan menampilkannya
-        async function fetchAndDisplayAddons() {
-            try {
-                const response = await fetch('/addons'); // Panggil endpoint GET /addons
-                const mods = await response.json();
-
-                modGrid.innerHTML = ''; // Kosongkan grid
-                mods.forEach(mod => {
-                    const modCard = document.createElement('div');
-                    modCard.className = 'mod-card';
-                    const tagsHTML = mod.tags.map(tag => `<span class="tag">${tag}</span>`).join('');
-                    modCard.innerHTML = `
-                        <img src="${mod.image}" alt="${mod.title}" class="card-thumbnail">
-                        <div class="card-body">
-                            <h3 class="card-title">${mod.title}</h3>
-                            <p class="card-author">by ${mod.author}</p>
-                            <div class="card-tags">${tagsHTML}</div>
-                        </div>
-                        <div class="card-footer">
-                            <span><i class="fa fa-download"></i> ${mod.downloads}</span>
-                            <span>Updated: ${mod.updated}</span>
-                        </div>
-                    `;
-                    modGrid.appendChild(modCard);
+            function readFileAsDataURL(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
                 });
-            } catch (error) {
-                console.error('Error fetching addons:', error);
             }
-        }
 
-        uploadForm.addEventListener('submit', async function(event) {
-            event.preventDefault();
+            function dataURLtoBlob(dataurl) {
+                if (!dataurl || !dataurl.includes(',')) { throw new Error("Invalid dataURL"); }
+                var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1], bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+                while(n--){ u8arr[n] = bstr.charCodeAt(n); }
+                return new Blob([u8arr], {type:mime});
+            }
 
-            // Gunakan FormData untuk mengirim file dan data teks
-            const formData = new FormData();
-            formData.append('title', document.getElementById('addon-title').value);
-            formData.append('author', document.getElementById('addon-author').value);
-            formData.append('category', document.getElementById('addon-category').value);
-            formData.append('addonFile', document.getElementById('addon-file').files[0]);
-
-            try {
-                // Kirim data ke server menggunakan fetch
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData // Tidak perlu header Content-Type, FormData menanganinya
-                });
-
-                if (response.ok) {
-                    alert('Upload successful!');
-                    uploadForm.reset();
-                    fetchAndDisplayAddons(); // Refresh daftar addon
-                } else {
-                    alert('Upload failed. Please try again.');
+            function initializeApp() {
+                const storedUser = localStorage.getItem('currentUser');
+                if (storedUser) {
+                    currentUser = JSON.parse(storedUser);
+                    isAdmin = currentUser.email === ADMIN_EMAIL;
                 }
-            } catch (error) {
-                console.error('Error uploading file:', error);
-                alert('An error occurred during upload.');
+                try {
+                    google.accounts.id.initialize({
+                        client_id: "29036694659-sho0ati9i3gmhl0rgcrbep2ri2d097ud.apps.googleusercontent.com",
+                        callback: handleCredentialResponse
+                    });
+                } catch (error) { console.error("Gagal menginisialisasi Google Sign-In:", error); }
+                
+                updateLoginStateUI();
+                renderUI();
             }
-        });
+            
+            async function handleCredentialResponse(response) {
+                const payload = JSON.parse(atob(response.credential.split('.')[1]));
+                currentUser = { name: payload.name, email: payload.email, picture: payload.picture };
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                isAdmin = currentUser.email === ADMIN_EMAIL;
 
-        // Tampilkan semua addon saat halaman pertama kali dimuat
-        fetchAndDisplayAddons();
+                const allUsers = await idbKeyval.get('userList') || [];
+                const userExists = allUsers.some(user => user.email === currentUser.email);
+                if (!userExists) {
+                    allUsers.push(currentUser);
+                    await idbKeyval.set('userList', allUsers);
+                }
+
+                updateLoginStateUI();
+                renderUI();
+            }
+
+            function updateLoginStateUI() {
+                const loginBtnContainer = document.getElementById('login-button-container');
+                const logoutBtn = document.getElementById('logout-btn');
+                const userProfile = document.getElementById('user-profile');
+                const uploadBtn = document.getElementById('upload-addon-btn');
+                const viewUsersBtn = document.getElementById('view-users-btn');
+
+                if (currentUser) {
+                    userProfile.innerHTML = `<img src="${currentUser.picture}" alt="User"><span>${currentUser.name}</span>`;
+                    userProfile.classList.remove('hidden');
+                    logoutBtn.classList.remove('hidden');
+                    loginBtnContainer.innerHTML = '';
+                    loginBtnContainer.classList.add('hidden');
+                    uploadBtn.classList.remove('hidden');
+                    viewUsersBtn.classList.toggle('hidden', !isAdmin);
+                } else {
+                    userProfile.classList.add('hidden');
+                    logoutBtn.classList.add('hidden');
+                    uploadBtn.classList.add('hidden');
+                    viewUsersBtn.classList.add('hidden');
+                    loginBtnContainer.classList.remove('hidden');
+                    try {
+                        google.accounts.id.renderButton(loginBtnContainer, { theme: "outline", size: "large" });
+                    } catch(error) { console.error("Gagal merender tombol Google:", error); }
+                }
+            }
+
+            async function getStoredData() {
+                const approved = await idbKeyval.get('approvedAddons') || [];
+                const pending = await idbKeyval.get('pendingAddons') || [];
+                return { approved, pending };
+            }
+
+            async function saveData(approved, pending) {
+                await idbKeyval.set('approvedAddons', approved);
+                await idbKeyval.set('pendingAddons', pending);
+            }
+
+            function renderUI() {
+                updateLoginStateUI();
+                renderGrids();
+            }
+
+            async function renderGrids() {
+                const { approved, pending } = await getStoredData();
+                const modGrid = document.getElementById('mod-grid');
+                const pendingGrid = document.getElementById('pending-grid');
+                const searchQuery = document.getElementById('search-input').value.toLowerCase();
+                const categoryFilter = document.getElementById('category-filter').value;
+
+                let filteredApproved = approved
+                    .filter(mod => mod.name.toLowerCase().includes(searchQuery))
+                    .filter(mod => categoryFilter === 'all' || mod.category === categoryFilter);
+
+                modGrid.innerHTML = '';
+                if (filteredApproved.length > 0) {
+                    filteredApproved.forEach(mod => modGrid.appendChild(createCard(mod, false)));
+                } else {
+                    modGrid.innerHTML = '<p>Tidak ada addon yang cocok dengan kriteria Anda.</p>';
+                }
+                
+                document.getElementById('admin-panel').classList.toggle('hidden', !isAdmin);
+                if (isAdmin) {
+                    pendingGrid.innerHTML = pending.length ? '' : '<p>Tidak ada addon yang menunggu persetujuan.</p>';
+                    pending.forEach(mod => pendingGrid.appendChild(createCard(mod, true)));
+                }
+            }
+
+            function createCard(mod, isPending) {
+                const card = document.createElement('div');
+                card.className = 'mod-card';
+                card.dataset.id = mod.id;
+                card.dataset.type = isPending ? 'pending' : 'approved';
+                const avgRating = mod.ratings.length ? (mod.ratings.reduce((a, b) => a + b, 0) / mod.ratings.length).toFixed(1) : 'N/A';
+                const downloadCount = (mod.downloadedBy && mod.downloadedBy.length) ? mod.downloadedBy.length : 0;
+                let adminButtons = '';
+                if (isAdmin) {
+                    if (isPending) {
+                        adminButtons = `<div style="position:absolute; top:8px; right:8px; display:flex; gap:8px;"><button class="btn" style="background-color:var(--accent-green); color:white;" data-id="${mod.id}" data-action="approve"><i class="fa fa-check"></i></button><button class="btn" style="background-color:var(--accent-red); color:white;" data-id="${mod.id}" data-action="reject"><i class="fa fa-times"></i></button></div>`;
+                    } else {
+                        adminButtons = `<div style="position:absolute; top:8px; right:8px;"><button class="btn" style="background-color:var(--accent-red); color:white;" data-id="${mod.id}" data-action="delete"><i class="fa fa-trash"></i></button></div>`;
+                    }
+                }
+                card.innerHTML = `
+                    ${adminButtons}
+                    <img src="${mod.image}" class="card-thumbnail">
+                    <div class="card-body">
+                        <h3 class="card-title">${mod.name}</h3>
+                        <div class="card-footer">
+                            <span class="star-rating"><i class="fa fa-star"></i> ${avgRating}</span>
+                            <span><i class="fa fa-comments"></i> ${mod.comments.length}</span>
+                            <span><i class="fa fa-download"></i> ${downloadCount}</span>
+                        </div>
+                    </div>`;
+                return card;
+            }
+
+            async function openDetailsModal(id, type) {
+                const { approved, pending } = await getStoredData();
+                const source = type === 'approved' ? approved : pending;
+                const addon = source.find(m => m.id === id);
+                if (!addon) return;
+
+                currentOpenAddonId = id;
+                document.getElementById('details-title').textContent = addon.name;
+                document.getElementById('details-description').textContent = addon.description;
+
+                const sliderContainer = document.getElementById('preview-slider-container');
+                if (addon.previewImages && addon.previewImages.length > 0) {
+                    let currentIndex = 0;
+                    sliderContainer.innerHTML = `<div class="preview-slider"><img id="slider-img" src="${addon.previewImages[0]}" class="slider-image"><button class="slider-btn prev">&lt;</button><button class="slider-btn next">&gt;</button></div><div id="slider-counter" class="slider-counter"></div>`;
+                    const imgElement = sliderContainer.querySelector('#slider-img');
+                    const counterElement = sliderContainer.querySelector('#slider-counter');
+                    const updateSlider = () => { imgElement.src = addon.previewImages[currentIndex]; counterElement.textContent = `${currentIndex + 1} / ${addon.previewImages.length}`; };
+                    sliderContainer.querySelector('.next').addEventListener('click', () => { currentIndex = (currentIndex + 1) % addon.previewImages.length; updateSlider(); });
+                    sliderContainer.querySelector('.prev').addEventListener('click', () => { currentIndex = (currentIndex - 1 + addon.previewImages.length) % addon.previewImages.length; updateSlider(); });
+                    updateSlider();
+                } else {
+                    sliderContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Gambar preview tidak tersedia.</p>';
+                }
+                
+                const downloadBtn = document.getElementById('download-btn');
+                const newDownloadBtn = downloadBtn.cloneNode(true);
+                downloadBtn.parentNode.replaceChild(newDownloadBtn, downloadBtn);
+
+                newDownloadBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    if (!currentUser) {
+                        alert("Anda harus login untuk mengunduh addon ini.");
+                        return;
+                    }
+
+                    let { approved: allApproved, pending: allPending } = await getStoredData();
+                    let sourceList = (type === 'approved') ? allApproved : allPending;
+                    let targetAddon = sourceList.find(m => m.id === id);
+
+                    if (targetAddon) {
+                        if (!targetAddon.downloadedBy) { targetAddon.downloadedBy = []; }
+                        if (!targetAddon.downloadedBy.includes(currentUser.email)) {
+                            targetAddon.downloadedBy.push(currentUser.email);
+                            await saveData(allApproved, allPending);
+                            await renderGrids();
+                        }
+                    }
+
+                    try {
+                        const blob = dataURLtoBlob(addon.file);
+                        const url = window.URL.createObjectURL(blob);
+                        const tempLink = document.createElement('a');
+                        tempLink.href = url; tempLink.setAttribute('download', addon.fileName);
+                        document.body.appendChild(tempLink); tempLink.click();
+                        document.body.removeChild(tempLink); window.URL.revokeObjectURL(url);
+                    } catch (error) { console.error("Gagal mengunduh:", error); alert("Gagal mengunduh file."); }
+                });
+                
+                document.getElementById('comment-form').style.display = currentUser ? 'block' : 'none';
+                document.querySelector('.rating-section').style.display = currentUser ? 'block' : 'none';
+                renderRatingDisplay(addon);
+                renderComments(addon);
+                document.getElementById('details-modal').classList.remove('hidden');
+            }
+
+            function renderRatingDisplay(addon) {
+                const avg = addon.ratings.length ? (addon.ratings.reduce((a, b) => a + b, 0) / addon.ratings.length) : 0;
+                const container = document.getElementById('details-rating-display');
+                let stars = '';
+                for (let i = 1; i <= 5; i++) stars += `<i class="fa${i <= avg ? 's' : 'r'} fa-star"></i>`;
+                container.innerHTML = stars + ` (${avg.toFixed(1)})`;
+                const interactiveStars = document.getElementById('details-rating-interactive');
+                interactiveStars.innerHTML = '';
+                for (let i = 1; i <= 5; i++) {
+                    const star = document.createElement('i');
+                    star.className = 'far fa-star'; star.dataset.value = i;
+                    interactiveStars.appendChild(star);
+                }
+            }
+            
+            function renderComments(addon) {
+                const list = document.getElementById('details-comments-list');
+                list.innerHTML = addon.comments.length ? '' : '<p>Belum ada komentar.</p>';
+                addon.comments.forEach(c => {
+                    const div = document.createElement('div'); div.className = 'comment';
+                    div.innerHTML = `<img src="${c.user.picture}"><div><span class="comment-author">${c.user.name}</span><p>${c.text}</p></div>`;
+                    list.appendChild(div);
+                });
+            }
+
+            // --- Event Listeners ---
+            document.getElementById('search-input').addEventListener('input', renderGrids);
+            document.getElementById('category-filter').addEventListener('change', renderGrids);
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                localStorage.removeItem('currentUser');
+                if (typeof google !== 'undefined') google.accounts.id.disableAutoSelect();
+                initializeApp();
+            });
+            document.getElementById('upload-addon-btn').addEventListener('click', () => document.getElementById('upload-modal').classList.remove('hidden'));
+            document.getElementById('close-upload-modal-btn').addEventListener('click', () => document.getElementById('upload-modal').classList.add('hidden'));
+            document.getElementById('close-details-modal-btn').addEventListener('click', () => document.getElementById('details-modal').classList.add('hidden'));
+            document.getElementById('close-view-users-modal-btn').addEventListener('click', () => document.getElementById('view-users-modal').classList.add('hidden'));
+            
+            document.getElementById('view-users-btn').addEventListener('click', async () => {
+                const container = document.getElementById('user-list-container');
+                const allUsers = await idbKeyval.get('userList') || [];
+                container.innerHTML = '';
+                if (allUsers.length > 0) {
+                    allUsers.forEach(user => {
+                        const userEl = document.createElement('div');
+                        userEl.className = 'user-list-item';
+                        userEl.innerHTML = `<img src="${user.picture}" alt="${user.name}"><div class="user-info"><p>${user.name}</p><span>${user.email}</span></div>`;
+                        container.appendChild(userEl);
+                    });
+                } else {
+                    container.innerHTML = '<p>Belum ada pengguna yang login.</p>';
+                }
+                document.getElementById('view-users-modal').classList.remove('hidden');
+            });
+            
+            document.getElementById('upload-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                if (!currentUser) { alert("Anda harus login untuk mengupload."); return; }
+                const imageFile = document.getElementById('addon-image').files[0];
+                const addonFile = document.getElementById('addon-file').files[0];
+                const previewFiles = document.getElementById('addon-previews').files;
+                if (!imageFile || !addonFile) { alert("Gambar utama dan file addon wajib diisi!"); return; }
+
+                try {
+                    const mainImagePromise = readFileAsDataURL(imageFile);
+                    const addonFilePromise = readFileAsDataURL(addonFile);
+                    const previewImagesPromises = Array.from(previewFiles).map(readFileAsDataURL);
+                    const [mainImageResult, addonFileResult, previewImagesResults] = await Promise.all([mainImagePromise, addonFilePromise, Promise.all(previewImagesPromises)]);
+                    
+                    const { approved, pending } = await getStoredData();
+                    pending.push({
+                        id: Date.now(), name: document.getElementById('addon-name').value, description: document.getElementById('addon-description').value,
+                        category: document.getElementById('addon-category').value, image: mainImageResult, file: addonFileResult,
+                        fileName: addonFile.name, uploader: currentUser, ratings: [], comments: [],
+                        previewImages: previewImagesResults, downloadedBy: []
+                    });
+                    await saveData(approved, pending);
+                    alert('Addon berhasil dikirim untuk persetujuan!');
+                    document.getElementById('upload-form').reset();
+                    document.getElementById('upload-modal').classList.add('hidden');
+                    await renderGrids();
+                } catch (error) { console.error("Gagal membaca file:", error); alert("Terjadi kesalahan saat memproses file."); }
+            });
+            
+            document.body.addEventListener('click', async (e) => {
+                const card = e.target.closest('.mod-card');
+                if (card && !e.target.closest('button')) {
+                    await openDetailsModal(parseInt(card.dataset.id), card.dataset.type);
+                    return;
+                }
+                const button = e.target.closest('[data-action]');
+                if (button && isAdmin) {
+                    const id = parseInt(button.dataset.id);
+                    const action = button.dataset.action;
+                    let { approved, pending } = await getStoredData();
+                    if (action === 'approve') { const addon = pending.find(m => m.id === id); if (addon) { approved.push(addon); pending = pending.filter(m => m.id !== id); } }
+                    else if (action === 'reject') { pending = pending.filter(m => m.id !== id); }
+                    else if (action === 'delete') { approved = approved.filter(m => m.id !== id); }
+                    await saveData(approved, pending);
+                    await renderGrids();
+                }
+            });
+            
+            document.getElementById('comment-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                if (!currentUser || !currentOpenAddonId) return;
+                const text = document.getElementById('comment-text').value;
+                let { approved, pending } = await getStoredData();
+                let addon = approved.find(m => m.id === currentOpenAddonId);
+                if (addon) {
+                    addon.comments.push({ user: currentUser, text });
+                    await saveData(approved, pending);
+                    renderComments(addon); e.target.reset();
+                }
+            });
+            
+            document.getElementById('details-rating-interactive').addEventListener('click', async e => {
+                if(e.target.matches('.fa-star') && currentUser && currentOpenAddonId) {
+                    const rating = parseInt(e.target.dataset.value);
+                    let { approved, pending } = await getStoredData();
+                    let addon = approved.find(m => m.id === currentOpenAddonId);
+                    if (addon) {
+                        addon.ratings.push(rating);
+                        await saveData(approved, pending);
+                        renderRatingDisplay(addon);
+                        alert(`Anda memberi rating ${rating} bintang!`);
+                    }
+                }
+            });
+
+            initializeApp();
+        };
     </script>
 </body>
 </html>
