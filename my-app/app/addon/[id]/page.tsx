@@ -1,12 +1,18 @@
 import { modsList } from '@/data/mods';
-import Link from 'next/link';
+import { javaModsList } from '@/data/javaMods'; // Import data Java
 import { notFound } from 'next/navigation';
 import AddonDetailClient from '@/components/AddonDetailClient';
+import LogoDropdown from '@/components/LogoDropdown';
 
 export default async function AddonDetail({ params }: { params: Promise<{ id: string }> }) {
   
   const { id } = await params;
-  const mod = modsList.find((m) => m.id === id);
+
+  // Gabungkan kedua list untuk pencarian
+  const allMods = [...modsList, ...javaModsList];
+  
+  // Cari mod di kedua list
+  const mod = allMods.find((m) => m.id === id);
 
   if (!mod) {
     return notFound();
@@ -16,15 +22,11 @@ export default async function AddonDetail({ params }: { params: Promise<{ id: st
     <>
       <header>
         <div className="header-left">
-          <Link href="/" className="logo">
-            <div className="logo-icon">K</div>
-            Kraa<span>Dev</span>
-          </Link>
+          <LogoDropdown />
         </div>
         <div className="search-bar" style={{visibility: 'hidden'}}></div>
       </header>
 
-      {/* Panggil Component Client */}
       <AddonDetailClient mod={mod} />
 
       <footer>
