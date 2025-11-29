@@ -38,4 +38,26 @@ Addon Yang Cocok Untuk Server Kalian **Mcpe** Cihuyy. Addon Server UI Untuk Setu
 3. Enjoy!
    `
   },
+  {
+    id: "2",
+    title: "SEASONS Add-On: Biomes, Animals & More!",
+    author: "Glorious Studios",
+    summary: "This is the only Seasons Add-On you’ll ever need!",
+    fileName: "SEASONS Add-On Biomes, Animals More! (addon)",
+    image: "seasons.jpg",
+    tags: ["addons", "dlc"],
+    version: "New", // <--- Ganti versi di sini dengan mudah!
+    
+    fullDescription: `
+### Seasons Add-On has everything you can dream of… and more!
+
+• Dynamic Seasons
+• New Biomes & Structures
+• Animals
+• Realistic VFX & Sounds
+• Fully compatible with Vibrant Visuals
+
+**This is the only Seasons Add-On you’ll ever need!**
+   `
+  },
 ];

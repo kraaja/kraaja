@@ -13,7 +13,7 @@ export const bedrockCategories: Category[] = [
   { id: 'maps', label: 'Maps', icon: '🗺️' },
   { id: 'texture', label: 'Texture Packs', icon: '🎨' },
   { id: 'skin', label: 'Skins', icon: '👕' },
-  { id: 'script', label: 'Scripts', icon: '📜' },
+  { id: 'dlc', label: 'Dlc', icon: '💽' },
 ];
 
 // Kategori Khusus Java
@@ -22,6 +22,6 @@ export const javaCategories: Category[] = [
   { id: 'forge', label: 'Forge', icon: '🔨' },
   { id: 'fabric', label: 'Fabric', icon: '🧵' },
   { id: 'shaders', label: 'Shaders', icon: '💡' },
-  { id: 'resourcepack', label: 'Resource Packs', icon: '📦' },
-  { id: 'modpack', label: 'Modpacks', icon: '🎒' },
+  { id: 'resourcepack', label: 'Resource/3D Model', icon: '📦' },
+  { id: 'plugin', label: 'Plugins', icon: '⛄' },
 ];
