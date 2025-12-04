@@ -9,6 +9,7 @@ export interface Category {
 // Kategori Khusus Bedrock
 export const bedrockCategories: Category[] = [
   { id: 'all', label: 'All Files', icon: '📂' },
+  { id: 'premium', label: 'Premium', icon: '💎' }, // <--- Kategori Baru
   { id: 'addons', label: 'Addons', icon: '🧩' },
   { id: 'maps', label: 'Maps', icon: '🗺️' },
   { id: 'texture', label: 'Texture Packs', icon: '🎨' },
