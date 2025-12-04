@@ -16,14 +16,14 @@ export interface Mod {
 
 export const modsList: Mod[] = [
   {
-    id: "kra-custom-shop",
-    title: "KRA CUSTOM SHOP",
+    id: "custom-shop",
+    title: "CustomShop-UI",
     author: "Kraa",
     summary: "Addon toko fisik (NPC) dengan UI modern, sistem preset, dan manajemen item lengkap.",
     fileName: "KRA_Custom_Shop_v2.mcaddon", // Nama file dummy
-    image: "", // Kosongkan jika belum ada gambar, akan muncul inisial "K"
+    image: "cshop.png", // Kosongkan jika belum ada gambar, akan muncul inisial "K"
     tags: ["premium", "addons", "utility"], // Tag 'premium' agar muncul di filter
-    version: "v2.0",
+    version: "New",
     isPremium: true, // Menandakan ini barang berbayar
     price: "Rp 10.000",
     
