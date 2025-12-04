@@ -20,7 +20,7 @@ export const modsList: Mod[] = [
     title: "CustomShop-UI",
     author: "Kraa",
     summary: "Addon toko fisik (NPC) dengan UI modern, sistem preset, dan manajemen item lengkap.",
-    fileName: "KRA_Custom_Shop_v2.mcaddon", // Nama file dummy
+    fileName: "CustomShop.mcaddon", // Nama file dummy
     image: "cshop.png", // Kosongkan jika belum ada gambar, akan muncul inisial "K"
     tags: ["premium", "addons", "utility"], // Tag 'premium' agar muncul di filter
     version: "New",
