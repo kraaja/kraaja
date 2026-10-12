@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import TradingChart from "@/components/TradingChart";
 import TradePanel from "@/components/TradePanel";
-import { BarChart2, BookOpen, ArrowLeftRight } from "lucide-react";
+import { BarChart2, BookOpen, ArrowLeftRight, Lock, Mail, User as UserIcon, LogOut, ShieldCheck } from "lucide-react";
 
 interface Order {
   id: string;
@@ -16,6 +16,13 @@ interface Order {
 }
 
 export default function Home() {
+  // Sistem Auth State
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [username, setUsername] = useState<string>("Kraa");
+
   // Saldo & Market State
   const [balanceUSDT, setBalanceUSDT] = useState<number>(12450.00);
   const [balanceBTC, setBalanceBTC] = useState<number>(0.5420);
@@ -32,20 +39,47 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<"openOrders" | "orderHistory" | "tradeHistory" | "funds">("openOrders");
   const [mobileTab, setMobileTab] = useState<"chart" | "orderbook" | "trade">("chart");
 
+  // Handler Login / Register
+  const handleAuthSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      alert("Harap masukkan email dan password!");
+      return;
+    }
+    setIsLoggedIn(true);
+    if (authMode === "register") {
+      alert("Akun berhasil didaftarkan! Selamat datang di KraaTrade.");
+    } else {
+      alert("Login berhasil!");
+    }
+  };
+
+  const handleDemoLogin = () => {
+    setEmail("kraa@trader.com");
+    setPassword("password123");
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setEmail("");
+    setPassword("");
+  };
+
   // Simulasi WebSocket Live Price Ticker & Order Matching Engine
   useEffect(() => {
+    if (!isLoggedIn) return;
+
     const interval = setInterval(() => {
       setCurrentPrice((prevPrice) => {
-        const fluctuation = (Math.random() - 0.48) * 30; // fluktuasi acak
+        const fluctuation = (Math.random() - 0.48) * 30;
         const newPrice = Number((prevPrice + fluctuation).toFixed(2));
         
-        // Update 24h change
         setPriceChange(pc => ({
           amount: pc.amount + fluctuation,
           percent: Number(((pc.amount + fluctuation) / 70000 * 100).toFixed(2))
         }));
 
-        // Matching Engine: Cek apakah ada Open Order yang kena harga pasar
         setOpenOrders((currentOrders) => {
           const remainingOrders: Order[] = [];
           
@@ -58,13 +92,11 @@ export default function Home() {
             }
 
             if (executed) {
-              // Eksekusi Berhasil!
               if (order.side === "Buy") {
                 setBalanceBTC(b => b + order.amount);
               } else {
                 setBalanceUSDT(u => u + (order.amount * order.price));
               }
-              // Pindahkan ke Trade History
               setTradeHistory(th => [order, ...th]);
             } else {
               remainingOrders.push(order);
@@ -79,15 +111,14 @@ export default function Home() {
     }, 1500);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isLoggedIn]);
 
-  // Fungsi Place Order (Pasang Order Baru)
+  // Fungsi Place Order
   const handlePlaceOrder = (type: "buy" | "sell", mode: "limit" | "market" | "stop", price: number, amount: number) => {
     const side = type === "buy" ? "Buy" : "Sell";
     const now = new Date().toLocaleTimeString();
     
     if (mode === "market") {
-      // Market order langsung eksekusi saat itu juga
       if (side === "Buy") {
         const cost = price * amount;
         if (cost > balanceUSDT) {
@@ -118,7 +149,6 @@ export default function Home() {
       setTradeHistory(th => [executedOrder, ...th]);
       alert(`Order Market ${side} ${amount} BTC berhasil dieksekusi instan!`);
     } else {
-      // Limit order masuk ke Open Orders
       if (side === "Buy") {
         const cost = price * amount;
         if (cost > balanceUSDT) {
@@ -150,7 +180,6 @@ export default function Home() {
     }
   };
 
-  // Batalkan Open Order
   const handleCancelOrder = (order: Order) => {
     setOpenOrders(o => o.filter(item => item.id !== order.id));
     if (order.side === "Buy") {
@@ -161,7 +190,6 @@ export default function Home() {
     alert("Order berhasil dibatalkan dan dana dikembalikan.");
   };
 
-  // Dummy Order Book Berdasarkan Current Price
   const sellOrders = [
     { price: currentPrice + 50, amount: "1.245" },
     { price: currentPrice + 40, amount: "0.892" },
@@ -178,14 +206,110 @@ export default function Home() {
     { price: currentPrice - 55, amount: "0.950" },
   ];
 
+  // JIKA BELUM LOGIN: TAMPILKAN HALAMAN LOGIN / REGISTER EKSKLUSIF
+  if (!isLoggedIn) {
+    return (
+      <main className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 selection:bg-blue-500/30">
+        <div className="w-full max-w-md bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl p-8 space-y-6">
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-black tracking-wider text-white">
+              KRAA<span className="text-blue-500">TRADE</span>
+            </h1>
+            <p className="text-xs text-slate-400">Platform Bursa Kripto Profesional & Real-time Simulasi</p>
+          </div>
+
+          {/* Toggle Login / Register */}
+          <div className="grid grid-cols-2 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
+            <button
+              onClick={() => setAuthMode("login")}
+              className={`py-2 rounded-lg transition ${authMode === "login" ? "bg-blue-600 text-white shadow-md" : "text-slate-400 hover:text-white"}`}
+            >
+              Masuk
+            </button>
+            <button
+              onClick={() => setAuthMode("register")}
+              className={`py-2 rounded-lg transition ${authMode === "register" ? "bg-blue-600 text-white shadow-md" : "text-slate-400 hover:text-white"}`}
+            >
+              Daftar
+            </button>
+          </div>
+
+          <form onSubmit={handleAuthSubmit} className="space-y-4 text-xs">
+            <div className="space-y-1">
+              <label className="text-slate-400">Email</label>
+              <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 focus-within:border-blue-500 transition">
+                <Mail size={16} className="text-slate-500 mr-2.5" />
+                <input 
+                  type="email" 
+                  placeholder="nama@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="bg-transparent outline-none w-full text-white text-sm"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-slate-400">Password</label>
+              <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 focus-within:border-blue-500 transition">
+                <Lock size={16} className="text-slate-500 mr-2.5" />
+                <input 
+                  type="password" 
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="bg-transparent outline-none w-full text-white text-sm"
+                  required
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold text-sm shadow-lg shadow-blue-500/25 transition active:scale-[0.98]"
+            >
+              {authMode === "login" ? "Masuk ke Akun" : "Buat Akun Baru"}
+            </button>
+          </form>
+
+          <div className="relative flex py-2 items-center">
+            <div className="flex-grow border-t border-slate-800"></div>
+            <span className="flex-shrink mx-4 text-slate-500 text-[11px]">ATAU</span>
+            <div className="flex-grow border-t border-slate-800"></div>
+          </div>
+
+          <button
+            onClick={handleDemoLogin}
+            className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 transition flex items-center justify-center gap-2"
+          >
+            <ShieldCheck size={16} className="text-blue-400" />
+            Masuk Cepat Mode Demo (Instan)
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  // JIKA SUDAH LOGIN: TAMPILKAN TERMINAL TRADING UTAMA
   return (
     <main className="min-h-screen bg-slate-950 font-sans text-slate-100 flex flex-col pb-16 lg:pb-0">
       <Navbar balanceUSDT={balanceUSDT} balanceBTC={balanceBTC} currentPrice={currentPrice} />
       
+      <div className="flex justify-end px-4 pt-2 bg-slate-950">
+        <button 
+          onClick={handleLogout}
+          className="flex items-center gap-1.5 text-xs text-rose-400 hover:text-rose-300 bg-slate-900 border border-slate-800 px-3 py-1 rounded-lg transition"
+        >
+          <LogOut size={14} />
+          <span>Keluar ({email || username})</span>
+        </button>
+      </div>
+
       <div className="flex-1 w-full p-2 sm:p-3 grid grid-cols-1 lg:grid-cols-12 gap-2.5 max-w-[1920px] mx-auto">
         
         {/* ORDER BOOK */}
-        <div className={`lg:col-span-3 xl:col-span-2 bg-slate-900/90 rounded-xl border border-slate-800/80 p-3 flex flex-col min-h-[450px] lg:h-[calc(100vh-85px)] ${
+        <div className={`lg:col-span-3 xl:col-span-2 bg-slate-900/90 rounded-xl border border-slate-800/80 p-3 flex flex-col min-h-[450px] lg:h-[calc(100vh-120px)] ${
           mobileTab === "orderbook" ? "flex" : "hidden lg:flex"
         }`}>
            <h3 className="text-xs font-bold text-slate-300 mb-3 uppercase tracking-wider flex items-center justify-between">
@@ -234,7 +358,7 @@ export default function Home() {
         </div>
 
         {/* CHART & TABLES */}
-        <div className={`lg:col-span-6 xl:col-span-7 flex-col gap-2.5 lg:h-[calc(100vh-85px)] overflow-hidden ${
+        <div className={`lg:col-span-6 xl:col-span-7 flex-col gap-2.5 lg:h-[calc(100vh-120px)] overflow-hidden ${
           mobileTab === "chart" ? "flex" : "hidden lg:flex"
         }`}>
           <div className="flex-none">
@@ -377,7 +501,7 @@ export default function Home() {
         </div>
 
         {/* TRADE PANEL */}
-        <div className={`lg:col-span-3 xl:col-span-3 lg:h-[calc(100vh-85px)] ${
+        <div className={`lg:col-span-3 xl:col-span-3 lg:h-[calc(100vh-120px)] ${
           mobileTab === "trade" ? "block" : "hidden lg:block"
         }`}>
           <TradePanel 
