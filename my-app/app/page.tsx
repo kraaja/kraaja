@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import TradingChart from "@/components/TradingChart";
 import TradePanel from "@/components/TradePanel";
-import { BarChart2, BookOpen, ArrowLeftRight, Lock, Mail, User as UserIcon, ShieldCheck, X, CheckCircle2, AlertCircle, Search, ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { BarChart2, BookOpen, ArrowLeftRight, Lock, Mail, User as UserIcon, ShieldCheck, X, CheckCircle2, AlertCircle, Search } from "lucide-react";
 
 interface Order {
   id: string;
@@ -75,8 +75,65 @@ export default function Home() {
   const [leftTab, setLeftTab] = useState<"orderbook" | "trades">("orderbook");
   const [mobileTab, setMobileTab] = useState<"chart" | "orderbook" | "trade">("chart");
 
-  // Cek Sesi Sembunyian Lokal
+  // Helper untuk membaca JWT Token dari Google Login
+  const parseJwt = (token: string) => {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      return null;
+    }
+  };
+
+  // Inisialisasi Google Identity Services (GIS)
   useEffect(() => {
+    const handleGoogleResponse = (response: any) => {
+      const profile = parseJwt(response.credential);
+      if (profile) {
+        const loggedUser = {
+          email: profile.email,
+          username: profile.name || profile.email.split("@")[0],
+          picture: profile.picture
+        };
+        localStorage.setItem("kraa_session", JSON.stringify(loggedUser));
+        setEmail(loggedUser.email);
+        setUsername(loggedUser.username);
+        setIsLoggedIn(true);
+        setNewUsername(loggedUser.username);
+        showNotification(`Berhasil masuk dengan Google (${loggedUser.username})!`, "success");
+      }
+    };
+
+    // Muat Script Google secara dinamis
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      if ((window as any).google) {
+        (window as any).google.accounts.id.initialize({
+          client_id: "324096660255-rdo9ajg2fm1u05l9p3nj0sfdi8dgbh88.apps.googleusercontent.com",
+          callback: handleGoogleResponse,
+        });
+
+        const googleBtnContainer = document.getElementById("google-signin-btn");
+        if (googleBtnContainer) {
+          (window as any).google.accounts.id.renderButton(googleBtnContainer, {
+            theme: "filled_black",
+            size: "large",
+            width: "350",
+            text: "signin_with",
+          });
+        }
+      }
+    };
+    document.body.appendChild(script);
+
+    // Cek Sesi Lokal
     const savedSession = localStorage.getItem("kraa_session");
     if (savedSession) {
       const userData = JSON.parse(savedSession);
@@ -85,9 +142,9 @@ export default function Home() {
       setIsLoggedIn(true);
       setNewUsername(userData.username);
     }
-  }, []);
+  }, [isLoggedIn]);
 
-  // Auth Handler
+  // Auth Handler Manual
   const handleAuthSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
@@ -132,11 +189,6 @@ export default function Home() {
 
   const handleDemoLogin = () => {
     const demoUser = { email: "demo@kraa.com", password: "123", username: "KraaPro" };
-    const storedUsers = JSON.parse(localStorage.getItem("kraa_users") || "[]");
-    if (!storedUsers.some((u: any) => u.email === demoUser.email)) {
-      storedUsers.push(demoUser);
-      localStorage.setItem("kraa_users", JSON.stringify(storedUsers));
-    }
     localStorage.setItem("kraa_session", JSON.stringify(demoUser));
     setEmail(demoUser.email);
     setUsername(demoUser.username);
@@ -206,7 +258,6 @@ export default function Home() {
           percent: Number(((pc.amount + fluctuation) / (prevPrice - pc.amount) * 100).toFixed(2))
         }));
 
-        // Tambah Recent Public Trades secara live
         const nowStr = new Date().toLocaleTimeString();
         const sideRandom: "Buy" | "Sell" = Math.random() > 0.5 ? "Buy" : "Sell";
         const amtRandom = (Math.random() * 0.8 + 0.05).toFixed(4);
@@ -218,7 +269,6 @@ export default function Home() {
           side: sideRandom
         }, ...rt.slice(0, 19)]);
 
-        // Match Open Orders
         setOpenOrders((currentOrders) => {
           const remainingOrders: Order[] = [];
           currentOrders.forEach((order) => {
@@ -335,7 +385,7 @@ export default function Home() {
     { price: currentPrice - 50, amount: "0.950" },
   ];
 
-  // HALAMAN LOGIN / REGISTER
+  // HALAMAN LOGIN / REGISTER DENGAN GOOGLE ASLI
   if (!isLoggedIn) {
     return (
       <main className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 selection:bg-blue-500/30">
@@ -354,6 +404,17 @@ export default function Home() {
               KRAA<span className="text-blue-500">TRADE</span>
             </h1>
             <p className="text-xs text-slate-400">Platform Bursa Kripto Profesional & Real-time Simulasi</p>
+          </div>
+
+          {/* GOOGLE SIGN-IN BUTTON ASLI */}
+          <div className="flex justify-center w-full py-2">
+            <div id="google-signin-btn"></div>
+          </div>
+
+          <div className="relative flex py-1 items-center">
+            <div className="flex-grow border-t border-slate-800"></div>
+            <span className="flex-shrink mx-4 text-slate-500 text-[11px]">ATAU EMAIL MANUAL</span>
+            <div className="flex-grow border-t border-slate-800"></div>
           </div>
 
           <div className="grid grid-cols-2 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
@@ -383,12 +444,6 @@ export default function Home() {
             </button>
           </form>
 
-          <div className="relative flex py-2 items-center">
-            <div className="flex-grow border-t border-slate-800"></div>
-            <span className="flex-shrink mx-4 text-slate-500 text-[11px]">ATAU</span>
-            <div className="flex-grow border-t border-slate-800"></div>
-          </div>
-
           <button onClick={handleDemoLogin} className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 transition flex items-center justify-center gap-2">
             <ShieldCheck size={16} className="text-blue-400" /> Masuk Mode Demo Instan
           </button>
@@ -400,7 +455,6 @@ export default function Home() {
   // APLIKASI TRADING UTAMA
   return (
     <main className="min-h-screen bg-slate-950 font-sans text-slate-100 flex flex-col pb-16 lg:pb-0">
-      {/* Toast Notification */}
       {notification && (
         <div className="fixed top-5 right-5 z-50 flex items-center gap-3 bg-slate-900/95 backdrop-blur-md border border-slate-800 shadow-2xl px-4 py-3 rounded-xl animate-in fade-in slide-in-from-top-5 duration-200">
           {notification.type === 'success' && <CheckCircle2 size={16} className="text-blue-400" />}
@@ -410,7 +464,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* MODAL MARKET / PAIR SELECTOR */}
       {isMarketModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
@@ -434,7 +487,7 @@ export default function Home() {
                     setIsMarketModalOpen(false);
                     showNotification(`Beralih ke market ${m.pair}`, "info");
                   }}
-                  className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-800/80 cursor-transition cursor-pointer text-xs font-mono"
+                  className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-800/80 cursor-pointer text-xs font-mono"
                 >
                   <span className="font-bold text-white">{m.pair}</span>
                   <span className="text-slate-300">${m.price.toLocaleString()}</span>
@@ -446,7 +499,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* MODAL DEPOSIT / WITHDRAW */}
       {walletModalType && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-6 space-y-4 shadow-2xl">
@@ -466,7 +518,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* MODAL EDIT PROFIL */}
       {isProfileOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-6 space-y-5 shadow-2xl">
@@ -499,8 +550,6 @@ export default function Home() {
       />
 
       <div className="flex-1 w-full p-2 sm:p-3 grid grid-cols-1 lg:grid-cols-12 gap-2.5 max-w-[1920px] mx-auto">
-        
-        {/* KOLOM KIRI (Order Book & Recent Public Trades Tab) */}
         <div className={`lg:col-span-3 xl:col-span-2 bg-slate-900/90 rounded-xl border border-slate-800/80 p-3 flex flex-col min-h-[450px] lg:h-[calc(100vh-85px)] ${
           mobileTab === "orderbook" ? "flex" : "hidden lg:flex"
         }`}>
@@ -556,7 +605,6 @@ export default function Home() {
            )}
         </div>
 
-        {/* KOLOM TENGAH (Chart & Tab Manajemen Order) */}
         <div className={`lg:col-span-6 xl:col-span-7 flex-col gap-2.5 lg:h-[calc(100vh-85px)] overflow-hidden ${
           mobileTab === "chart" ? "flex" : "hidden lg:flex"
         }`}>
@@ -659,7 +707,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* KOLOM KANAN (Panel Trading Lengkap) */}
         <div className={`lg:col-span-3 xl:col-span-3 lg:h-[calc(100vh-85px)] ${
           mobileTab === "trade" ? "block" : "hidden lg:block"
         }`}>
@@ -673,10 +720,8 @@ export default function Home() {
             onNotify={showNotification}
           />
         </div>
-
       </div>
 
-      {/* MOBILE BOTTOM NAVIGATION */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-950/95 backdrop-blur-lg border-t border-slate-800/80 flex items-center justify-around py-2 px-1 lg:hidden">
         <button onClick={() => setMobileTab("chart")} className={`flex flex-col items-center gap-1 text-[11px] transition ${mobileTab === "chart" ? "text-blue-400 font-semibold" : "text-slate-400"}`}>
           <BarChart2 size={18} /><span>Chart</span>
