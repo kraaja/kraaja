@@ -8,29 +8,30 @@ export default function TradingChart() {
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
+    const isMobile = window.innerWidth < 768;
+
     const chart = createChart(chartContainerRef.current, {
       layout: {
-        background: { type: ColorType.Solid, color: "#0F172A" }, // tailwind slate-900
-        textColor: "#94A3B8", // slate-400
+        background: { type: ColorType.Solid, color: "#0F172A" },
+        textColor: "#94A3B8",
       },
       grid: {
-        vertLines: { color: "#1E293B" }, // slate-800
+        vertLines: { color: "#1E293B" },
         horzLines: { color: "#1E293B" },
       },
       width: chartContainerRef.current.clientWidth,
-      height: 450,
+      height: isMobile ? 320 : 420,
       timeScale: { timeVisible: true, secondsVisible: false },
     });
 
     const candlestickSeries = chart.addSeries(CandlestickSeries, {
-      upColor: "#3B82F6", // Blue 500
-      downColor: "#F43F5E", // Rose 500
+      upColor: "#3B82F6",
+      downColor: "#F43F5E",
       borderVisible: false,
       wickUpColor: "#3B82F6",
       wickDownColor: "#F43F5E",
     });
 
-    // Dummy Data dengan trend
     candlestickSeries.setData([
       { time: "2026-10-01", open: 65000, high: 65500, low: 64000, close: 64500 },
       { time: "2026-10-02", open: 64500, high: 66000, low: 64200, close: 65800 },
@@ -42,7 +43,10 @@ export default function TradingChart() {
     ]);
 
     const handleResize = () => {
-      chart.applyOptions({ width: chartContainerRef.current?.clientWidth });
+      chart.applyOptions({ 
+        width: chartContainerRef.current?.clientWidth,
+        height: window.innerWidth < 768 ? 320 : 420
+      });
     };
     window.addEventListener("resize", handleResize);
 
@@ -53,40 +57,25 @@ export default function TradingChart() {
   }, []);
 
   return (
-    <div className="w-full h-full bg-slate-900 rounded-lg border border-slate-800 flex flex-col">
-      {/* Market Stats Header */}
-      <div className="flex flex-wrap items-center gap-6 p-4 border-b border-slate-800">
-        <div>
-          <h2 className="text-2xl font-black text-white flex items-center gap-2">
-            BTC<span className="text-slate-500 text-lg">/USDT</span>
+    <div className="w-full bg-slate-900/90 rounded-xl border border-slate-800/80 overflow-hidden">
+      {/* Header Info Market */}
+      <div className="p-3 border-b border-slate-800/80 flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg sm:text-xl font-black text-white font-mono">
+            BTC<span className="text-slate-500 text-xs">/USDT</span>
           </h2>
-          <p className="text-blue-500 hover:underline cursor-pointer text-xs">Bitcoin</p>
+          <div>
+            <p className="text-base font-bold text-blue-400 font-mono">70,500.00</p>
+          </div>
         </div>
-        <div>
-          <p className="text-slate-400 text-xs">Harga Terakhir</p>
-          <p className="text-lg font-bold text-blue-500">70,500.00</p>
-        </div>
-        <div>
-          <p className="text-slate-400 text-xs">Perubahan 24j</p>
-          <p className="text-sm font-bold text-blue-500">+1,300.00 (+1.87%)</p>
-        </div>
-        <div className="hidden sm:block">
-          <p className="text-slate-400 text-xs">Tertinggi 24j</p>
-          <p className="text-sm font-medium text-slate-200">71,000.00</p>
-        </div>
-        <div className="hidden sm:block">
-          <p className="text-slate-400 text-xs">Terendah 24j</p>
-          <p className="text-sm font-medium text-slate-200">67,500.00</p>
-        </div>
-        <div className="hidden md:block">
-          <p className="text-slate-400 text-xs">Volume 24j (BTC)</p>
-          <p className="text-sm font-medium text-slate-200">45,231.84</p>
+        <div className="text-right">
+          <span className="text-xs font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded font-mono">+1.87%</span>
         </div>
       </div>
       
-      {/* Area Chart */}
-      <div className="flex-1 p-2">
-        <div ref={chartContainerRef} className="w-full h-[450px]" />
+      {/* Chart Canvas */}
+      <div className="p-1 sm:p-2">
+        <div ref={chartContainerRef} className="w-full" />
       </div>
     </div>
   );
