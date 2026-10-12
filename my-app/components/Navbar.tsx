@@ -1,13 +1,16 @@
 "use client";
-import { Activity, User } from "lucide-react";
+import { Activity, User, LogOut, Settings } from "lucide-react";
 
 interface NavbarProps {
   balanceUSDT: number;
   balanceBTC: number;
   currentPrice: number;
+  username: string;
+  onLogout: () => void;
+  onOpenProfile: () => void;
 }
 
-export default function Navbar({ balanceUSDT, balanceBTC, currentPrice }: NavbarProps) {
+export default function Navbar({ balanceUSDT, balanceBTC, currentPrice, username, onLogout, onOpenProfile }: NavbarProps) {
   const totalPortfolio = balanceUSDT + (balanceBTC * currentPrice);
 
   return (
@@ -27,16 +30,34 @@ export default function Navbar({ balanceUSDT, balanceBTC, currentPrice }: Navbar
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="text-right">
+        <div className="text-right hidden sm:block">
           <p className="text-[10px] text-slate-400 leading-tight">Total Portofolio</p>
           <p className="text-xs sm:text-sm font-bold text-white font-mono">
             ${totalPortfolio.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         </div>
 
-        <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg">
-          <User size={14} className="text-blue-400" />
-          <span className="font-semibold text-slate-200 text-xs hidden sm:inline">Kraa</span>
+        {/* Profil Pengguna di Pojok Kanan Atas */}
+        <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg shadow-sm">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={onOpenProfile} title="Edit Profil">
+            <User size={16} className="text-blue-400" />
+            <span className="font-semibold text-slate-200 text-xs max-w-[100px] truncate">{username}</span>
+          </div>
+          <button 
+            onClick={onOpenProfile} 
+            className="text-slate-400 hover:text-blue-400 transition ml-1"
+            title="Edit Profil"
+          >
+            <Settings size={14} />
+          </button>
+          <div className="h-4 w-[1px] bg-slate-700 mx-1"></div>
+          <button 
+            onClick={onLogout} 
+            className="text-rose-400 hover:text-rose-300 transition"
+            title="Keluar"
+          >
+            <LogOut size={14} />
+          </button>
         </div>
       </div>
     </nav>

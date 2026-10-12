@@ -7,6 +7,7 @@ interface TradePanelProps {
   currentPrice: number;
   selectedPrice: number;
   onPlaceOrder: (type: "buy" | "sell", mode: "limit" | "market" | "stop", price: number, amount: number) => void;
+  onNotify: (message: string, type: "success" | "error" | "info") => void;
 }
 
 export default function TradePanel({
@@ -14,7 +15,8 @@ export default function TradePanel({
   balanceBTC,
   currentPrice,
   selectedPrice,
-  onPlaceOrder
+  onPlaceOrder,
+  onNotify
 }: TradePanelProps) {
   const [orderType, setOrderType] = useState<"buy" | "sell">("buy");
   const [tradeMode, setTradeMode] = useState<"limit" | "market" | "stop">("limit");
@@ -49,17 +51,17 @@ export default function TradePanel({
   const handleSubmit = () => {
     const numAmount = parseFloat(amount);
     if (!numAmount || numAmount <= 0) {
-      alert("Masukkan jumlah yang valid!");
+      onNotify("Masukkan jumlah yang valid!", "error");
       return;
     }
 
     if (orderType === "buy" && parseFloat(totalValue) > balanceUSDT) {
-      alert("Saldo USDT tidak mencukupi!");
+      onNotify("Saldo USDT tidak mencukupi!", "error");
       return;
     }
 
     if (orderType === "sell" && numAmount > balanceBTC) {
-      alert("Saldo BTC tidak mencukupi!");
+      onNotify("Saldo BTC tidak mencukupi!", "error");
       return;
     }
 

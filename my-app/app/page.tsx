@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import TradingChart from "@/components/TradingChart";
 import TradePanel from "@/components/TradePanel";
-import { BarChart2, BookOpen, ArrowLeftRight, Lock, Mail, User as UserIcon, LogOut, ShieldCheck } from "lucide-react";
+import { BarChart2, BookOpen, ArrowLeftRight, Lock, Mail, User as UserIcon, ShieldCheck, X, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface Order {
   id: string;
@@ -16,12 +16,24 @@ interface Order {
 }
 
 export default function Home() {
-  // Sistem Auth State
+  // Toast Notification State
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => {
+      setNotification(null);
+    }, 3500);
+  };
+
+  // Auth & User State
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [username, setUsername] = useState<string>("Kraa");
+  const [username, setUsername] = useState<string>("KraaTrader");
+  const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
+  const [newUsername, setNewUsername] = useState<string>("");
 
   // Saldo & Market State
   const [balanceUSDT, setBalanceUSDT] = useState<number>(12450.00);
@@ -39,31 +51,101 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<"openOrders" | "orderHistory" | "tradeHistory" | "funds">("openOrders");
   const [mobileTab, setMobileTab] = useState<"chart" | "orderbook" | "trade">("chart");
 
-  // Handler Login / Register
+  // Cek Sesi Tersimpan
+  useEffect(() => {
+    const savedSession = localStorage.getItem("kraa_session");
+    if (savedSession) {
+      const userData = JSON.parse(savedSession);
+      setEmail(userData.email);
+      setUsername(userData.username);
+      setIsLoggedIn(true);
+      setNewUsername(userData.username);
+    }
+  }, []);
+
   const handleAuthSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      alert("Harap masukkan email dan password!");
+      showNotification("Harap masukkan email dan password!", "error");
       return;
     }
-    setIsLoggedIn(true);
+
+    const storedUsers = JSON.parse(localStorage.getItem("kraa_users") || "[]");
+
     if (authMode === "register") {
-      alert("Akun berhasil didaftarkan! Selamat datang di KraaTrade.");
+      const existingUser = storedUsers.find((u: any) => u.email === email);
+      if (existingUser) {
+        showNotification("Email sudah terdaftar! Silakan langsung masuk.", "error");
+        setAuthMode("login");
+        return;
+      }
+
+      const defaultUsername = email.split("@")[0];
+      const newUser = { email, password, username: defaultUsername };
+      storedUsers.push(newUser);
+      localStorage.setItem("kraa_users", JSON.stringify(storedUsers));
+      
+      localStorage.setItem("kraa_session", JSON.stringify(newUser));
+      setUsername(defaultUsername);
+      setNewUsername(defaultUsername);
+      setIsLoggedIn(true);
+      showNotification("Akun berhasil didaftarkan! Selamat datang.", "success");
     } else {
-      alert("Login berhasil!");
+      const foundUser = storedUsers.find((u: any) => u.email === email && u.password === password);
+      if (!foundUser) {
+        showNotification("Email atau password salah!", "error");
+        return;
+      }
+
+      localStorage.setItem("kraa_session", JSON.stringify(foundUser));
+      setUsername(foundUser.username);
+      setNewUsername(foundUser.username);
+      setIsLoggedIn(true);
+      showNotification("Login berhasil!", "success");
     }
   };
 
   const handleDemoLogin = () => {
-    setEmail("kraa@trader.com");
-    setPassword("password123");
+    const demoUser = { email: "demo@kraa.com", password: "123", username: "KraaPro" };
+    const storedUsers = JSON.parse(localStorage.getItem("kraa_users") || "[]");
+    if (!storedUsers.some((u: any) => u.email === demoUser.email)) {
+      storedUsers.push(demoUser);
+      localStorage.setItem("kraa_users", JSON.stringify(storedUsers));
+    }
+    localStorage.setItem("kraa_session", JSON.stringify(demoUser));
+    setEmail(demoUser.email);
+    setUsername(demoUser.username);
+    setNewUsername(demoUser.username);
     setIsLoggedIn(true);
+    showNotification("Masuk mode demo berhasil!", "success");
   };
 
   const handleLogout = () => {
+    localStorage.removeItem("kraa_session");
     setIsLoggedIn(false);
     setEmail("");
     setPassword("");
+    showNotification("Berhasil keluar dari akun.", "info");
+  };
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUsername.trim()) {
+      showNotification("Username tidak boleh kosong!", "error");
+      return;
+    }
+
+    setUsername(newUsername);
+    const session = JSON.parse(localStorage.getItem("kraa_session") || "{}");
+    session.username = newUsername;
+    localStorage.setItem("kraa_session", JSON.stringify(session));
+
+    const storedUsers = JSON.parse(localStorage.getItem("kraa_users") || "[]");
+    const updatedUsers = storedUsers.map((u: any) => u.email === email ? { ...u, username: newUsername } : u);
+    localStorage.setItem("kraa_users", JSON.stringify(updatedUsers));
+
+    setIsProfileOpen(false);
+    showNotification("Profil berhasil diperbarui!", "success");
   };
 
   // Simulasi WebSocket Live Price Ticker & Order Matching Engine
@@ -98,6 +180,7 @@ export default function Home() {
                 setBalanceUSDT(u => u + (order.amount * order.price));
               }
               setTradeHistory(th => [order, ...th]);
+              showNotification(`Order ${order.side} ${order.amount} BTC tereksekusi otomatis!`, "success");
             } else {
               remainingOrders.push(order);
             }
@@ -113,7 +196,6 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [isLoggedIn]);
 
-  // Fungsi Place Order
   const handlePlaceOrder = (type: "buy" | "sell", mode: "limit" | "market" | "stop", price: number, amount: number) => {
     const side = type === "buy" ? "Buy" : "Sell";
     const now = new Date().toLocaleTimeString();
@@ -122,14 +204,14 @@ export default function Home() {
       if (side === "Buy") {
         const cost = price * amount;
         if (cost > balanceUSDT) {
-          alert("Saldo USDT tidak cukup!");
+          showNotification("Saldo USDT tidak cukup!", "error");
           return;
         }
         setBalanceUSDT(u => u - cost);
         setBalanceBTC(b => b + amount);
       } else {
         if (amount > balanceBTC) {
-          alert("Saldo BTC tidak cukup!");
+          showNotification("Saldo BTC tidak cukup!", "error");
           return;
         }
         setBalanceBTC(b => b - amount);
@@ -147,18 +229,18 @@ export default function Home() {
       };
 
       setTradeHistory(th => [executedOrder, ...th]);
-      alert(`Order Market ${side} ${amount} BTC berhasil dieksekusi instan!`);
+      showNotification(`Order Market ${side} ${amount} BTC berhasil dieksekusi instan!`, "success");
     } else {
       if (side === "Buy") {
         const cost = price * amount;
         if (cost > balanceUSDT) {
-          alert("Saldo USDT tidak cukup untuk pasang Limit Order!");
+          showNotification("Saldo USDT tidak cukup untuk Limit Order!", "error");
           return;
         }
         setBalanceUSDT(u => u - cost);
       } else {
         if (amount > balanceBTC) {
-          alert("Saldo BTC tidak cukup untuk pasang Limit Order!");
+          showNotification("Saldo BTC tidak cukup untuk Limit Order!", "error");
           return;
         }
         setBalanceBTC(b => b - amount);
@@ -176,7 +258,7 @@ export default function Home() {
 
       setOpenOrders(o => [newOrder, ...o]);
       setOrderHistory(oh => [newOrder, ...oh]);
-      alert(`Limit Order ${side} berhasil dipasang di harga ${price.toLocaleString()} USDT!`);
+      showNotification(`Limit Order ${side} dipasang di harga ${price.toLocaleString()} USDT`, "success");
     }
   };
 
@@ -187,7 +269,7 @@ export default function Home() {
     } else {
       setBalanceBTC(b => b + order.amount);
     }
-    alert("Order berhasil dibatalkan dan dana dikembalikan.");
+    showNotification("Order dibatalkan dan dana dikembalikan.", "info");
   };
 
   const sellOrders = [
@@ -206,19 +288,28 @@ export default function Home() {
     { price: currentPrice - 55, amount: "0.950" },
   ];
 
-  // JIKA BELUM LOGIN: TAMPILKAN HALAMAN LOGIN / REGISTER EKSKLUSIF
+  // TAMPILAN LOGIN / REGISTER
   if (!isLoggedIn) {
     return (
       <main className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 selection:bg-blue-500/30">
+        {/* CUSTOM TOAST NOTIFICATION */}
+        {notification && (
+          <div className="fixed top-5 right-5 z-50 flex items-center gap-3 bg-slate-900/95 backdrop-blur-md border border-slate-800 shadow-2xl px-4 py-3 rounded-xl animate-in fade-in slide-in-from-top-5 duration-200">
+            {notification.type === 'success' && <CheckCircle2 size={16} className="text-blue-400" />}
+            {notification.type === 'error' && <AlertCircle size={16} className="text-rose-400" />}
+            {notification.type === 'info' && <AlertCircle size={16} className="text-amber-400" />}
+            <span className="text-xs font-medium text-slate-200">{notification.message}</span>
+          </div>
+        )}
+
         <div className="w-full max-w-md bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl p-8 space-y-6">
           <div className="text-center space-y-2">
             <h1 className="text-3xl font-black tracking-wider text-white">
               KRAA<span className="text-blue-500">TRADE</span>
             </h1>
-            <p className="text-xs text-slate-400">Platform Bursa Kripto Profesional & Real-time Simulasi</p>
+            <p className="text-xs text-slate-400">Silakan daftar atau masuk untuk mulai trading kripto</p>
           </div>
 
-          {/* Toggle Login / Register */}
           <div className="grid grid-cols-2 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
             <button
               onClick={() => setAuthMode("login")}
@@ -230,7 +321,7 @@ export default function Home() {
               onClick={() => setAuthMode("register")}
               className={`py-2 rounded-lg transition ${authMode === "register" ? "bg-blue-600 text-white shadow-md" : "text-slate-400 hover:text-white"}`}
             >
-              Daftar
+              Daftar Akun Baru
             </button>
           </div>
 
@@ -269,7 +360,7 @@ export default function Home() {
               type="submit"
               className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold text-sm shadow-lg shadow-blue-500/25 transition active:scale-[0.98]"
             >
-              {authMode === "login" ? "Masuk ke Akun" : "Buat Akun Baru"}
+              {authMode === "login" ? "Masuk" : "Daftar Sekarang"}
             </button>
           </form>
 
@@ -284,32 +375,95 @@ export default function Home() {
             className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 transition flex items-center justify-center gap-2"
           >
             <ShieldCheck size={16} className="text-blue-400" />
-            Masuk Cepat Mode Demo (Instan)
+            Masuk Mode Demo Instan
           </button>
         </div>
       </main>
     );
   }
 
-  // JIKA SUDAH LOGIN: TAMPILKAN TERMINAL TRADING UTAMA
+  // TAMPILAN UTAMA TERMINAL TRADING
   return (
     <main className="min-h-screen bg-slate-950 font-sans text-slate-100 flex flex-col pb-16 lg:pb-0">
-      <Navbar balanceUSDT={balanceUSDT} balanceBTC={balanceBTC} currentPrice={currentPrice} />
-      
-      <div className="flex justify-end px-4 pt-2 bg-slate-950">
-        <button 
-          onClick={handleLogout}
-          className="flex items-center gap-1.5 text-xs text-rose-400 hover:text-rose-300 bg-slate-900 border border-slate-800 px-3 py-1 rounded-lg transition"
-        >
-          <LogOut size={14} />
-          <span>Keluar ({email || username})</span>
-        </button>
-      </div>
+      {/* CUSTOM TOAST NOTIFICATION */}
+      {notification && (
+        <div className="fixed top-5 right-5 z-50 flex items-center gap-3 bg-slate-900/95 backdrop-blur-md border border-slate-800 shadow-2xl px-4 py-3 rounded-xl animate-in fade-in slide-in-from-top-5 duration-200">
+          {notification.type === 'success' && <CheckCircle2 size={16} className="text-blue-400" />}
+          {notification.type === 'error' && <AlertCircle size={16} className="text-rose-400" />}
+          {notification.type === 'info' && <AlertCircle size={16} className="text-amber-400" />}
+          <span className="text-xs font-medium text-slate-200">{notification.message}</span>
+        </div>
+      )}
+
+      <Navbar 
+        balanceUSDT={balanceUSDT} 
+        balanceBTC={balanceBTC} 
+        currentPrice={currentPrice} 
+        username={username}
+        onLogout={handleLogout}
+        onOpenProfile={() => setIsProfileOpen(true)}
+      />
+
+      {/* MODAL EDIT PROFIL */}
+      {isProfileOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-6 space-y-5 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="font-bold text-white text-base">Edit Profil Akun</h3>
+              <button onClick={() => setIsProfileOpen(false)} className="text-slate-400 hover:text-white">
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProfile} className="space-y-4 text-xs">
+              <div className="space-y-1">
+                <label className="text-slate-400">Email (Permanen)</label>
+                <input 
+                  type="text" 
+                  value={email} 
+                  disabled 
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-500 cursor-not-allowed" 
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-slate-400">Username</label>
+                <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 focus-within:border-blue-500 transition">
+                  <UserIcon size={16} className="text-slate-500 mr-2.5" />
+                  <input 
+                    type="text" 
+                    value={newUsername}
+                    onChange={(e) => setNewUsername(e.target.value)}
+                    className="bg-transparent outline-none w-full text-white text-sm"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsProfileOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-lg shadow-blue-500/20 transition"
+                >
+                  Simpan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 w-full p-2 sm:p-3 grid grid-cols-1 lg:grid-cols-12 gap-2.5 max-w-[1920px] mx-auto">
         
         {/* ORDER BOOK */}
-        <div className={`lg:col-span-3 xl:col-span-2 bg-slate-900/90 rounded-xl border border-slate-800/80 p-3 flex flex-col min-h-[450px] lg:h-[calc(100vh-120px)] ${
+        <div className={`lg:col-span-3 xl:col-span-2 bg-slate-900/90 rounded-xl border border-slate-800/80 p-3 flex flex-col min-h-[450px] lg:h-[calc(100vh-85px)] ${
           mobileTab === "orderbook" ? "flex" : "hidden lg:flex"
         }`}>
            <h3 className="text-xs font-bold text-slate-300 mb-3 uppercase tracking-wider flex items-center justify-between">
@@ -358,7 +512,7 @@ export default function Home() {
         </div>
 
         {/* CHART & TABLES */}
-        <div className={`lg:col-span-6 xl:col-span-7 flex-col gap-2.5 lg:h-[calc(100vh-120px)] overflow-hidden ${
+        <div className={`lg:col-span-6 xl:col-span-7 flex-col gap-2.5 lg:h-[calc(100vh-85px)] overflow-hidden ${
           mobileTab === "chart" ? "flex" : "hidden lg:flex"
         }`}>
           <div className="flex-none">
@@ -501,7 +655,7 @@ export default function Home() {
         </div>
 
         {/* TRADE PANEL */}
-        <div className={`lg:col-span-3 xl:col-span-3 lg:h-[calc(100vh-120px)] ${
+        <div className={`lg:col-span-3 xl:col-span-3 lg:h-[calc(100vh-85px)] ${
           mobileTab === "trade" ? "block" : "hidden lg:block"
         }`}>
           <TradePanel 
@@ -510,6 +664,7 @@ export default function Home() {
             currentPrice={currentPrice}
             selectedPrice={selectedPrice}
             onPlaceOrder={handlePlaceOrder}
+            onNotify={showNotification}
           />
         </div>
 
