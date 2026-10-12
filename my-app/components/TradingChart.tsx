@@ -2,7 +2,12 @@
 import { useEffect, useRef } from "react";
 import { createChart, CandlestickSeries, ColorType } from "lightweight-charts";
 
-export default function TradingChart() {
+interface TradingChartProps {
+  currentPrice: number;
+  priceChange24h: { amount: number; percent: number };
+}
+
+export default function TradingChart({ currentPrice, priceChange24h }: TradingChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -20,7 +25,7 @@ export default function TradingChart() {
         horzLines: { color: "#1E293B" },
       },
       width: chartContainerRef.current.clientWidth,
-      height: isMobile ? 320 : 420,
+      height: isMobile ? 300 : 400,
       timeScale: { timeVisible: true, secondsVisible: false },
     });
 
@@ -45,7 +50,7 @@ export default function TradingChart() {
     const handleResize = () => {
       chart.applyOptions({ 
         width: chartContainerRef.current?.clientWidth,
-        height: window.innerWidth < 768 ? 320 : 420
+        height: window.innerWidth < 768 ? 300 : 400
       });
     };
     window.addEventListener("resize", handleResize);
@@ -57,23 +62,28 @@ export default function TradingChart() {
   }, []);
 
   return (
-    <div className="w-full bg-slate-900/90 rounded-xl border border-slate-800/80 overflow-hidden">
-      {/* Header Info Market */}
-      <div className="p-3 border-b border-slate-800/80 flex items-center justify-between flex-wrap gap-2">
+    <div className="w-full bg-slate-900/90 rounded-xl border border-slate-800/80 overflow-hidden shadow-xl">
+      <div className="p-3 border-b border-slate-800/80 flex items-center justify-between flex-wrap gap-2 bg-slate-950/30">
         <div className="flex items-center gap-3">
           <h2 className="text-lg sm:text-xl font-black text-white font-mono">
             BTC<span className="text-slate-500 text-xs">/USDT</span>
           </h2>
           <div>
-            <p className="text-base font-bold text-blue-400 font-mono">70,500.00</p>
+            <p className="text-base font-bold text-blue-400 font-mono">
+              {currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </p>
           </div>
         </div>
-        <div className="text-right">
-          <span className="text-xs font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded font-mono">+1.87%</span>
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <p className="text-[10px] text-slate-400">Perubahan 24j</p>
+            <p className={`text-xs font-bold font-mono ${priceChange24h.amount >= 0 ? 'text-blue-400' : 'text-rose-500'}`}>
+              {priceChange24h.amount >= 0 ? '+' : ''}{priceChange24h.amount.toFixed(2)} ({priceChange24h.percent.toFixed(2)}%)
+            </p>
+          </div>
         </div>
       </div>
       
-      {/* Chart Canvas */}
       <div className="p-1 sm:p-2">
         <div ref={chartContainerRef} className="w-full" />
       </div>
