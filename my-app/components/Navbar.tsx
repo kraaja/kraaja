@@ -1,5 +1,5 @@
 "use client";
-import { Activity, User, ArrowDownRight, ChevronDown, Settings, LogOut } from "lucide-react";
+import { Activity, User, ArrowDownRight, ArrowUpRight, ChevronDown, Settings, LogOut } from "lucide-react";
 
 interface NavbarProps {
   balanceUSDT: number;
@@ -37,7 +37,6 @@ export default function Navbar({
           </span>
         </div>
 
-        {/* Tombol Pemilih Market */}
         <button 
           onClick={onOpenMarketModal}
           className="flex items-center gap-1 bg-slate-900 border border-slate-800 hover:border-slate-700 px-2 py-1 rounded-lg transition text-xs font-bold flex-shrink-0"
@@ -47,40 +46,42 @@ export default function Navbar({
         </button>
       </div>
 
-      {/* SISI KANAN: Aksi Cepat & Profil Pengguna */}
-      <div className="flex items-center gap-2 flex-shrink-0">
-        {/* Tombol Deposit Cepat */}
+      {/* SISI KANAN: Tombol Wallet (Deposit & Withdraw) & Profil */}
+      <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
+        {/* Tombol Deposit */}
         <button 
           onClick={() => onOpenWalletModal('deposit')}
           className="flex items-center gap-1 px-2 py-1 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg text-[11px] font-semibold transition active:scale-95"
           title="Deposit"
         >
           <ArrowDownRight size={13} /> 
-          <span className="hidden xs:inline">Deposit</span>
+          <span className="hidden xs:inline">Depo</span>
         </button>
 
-        {/* Kartu Profil & Pengaturan */}
+        {/* Tombol Withdraw */}
+        <button 
+          onClick={() => onOpenWalletModal('withdraw')}
+          className="flex items-center gap-1 px-2 py-1 bg-slate-800 text-slate-300 border border-slate-700 rounded-lg text-[11px] font-semibold transition active:scale-95"
+          title="Withdraw"
+        >
+          <ArrowUpRight size={13} /> 
+          <span className="hidden xs:inline">Wd</span>
+        </button>
+
+        {/* Kartu Profil Pengguna */}
         <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg shadow-sm">
-          <div className="flex items-center gap-1.5 cursor-pointer max-w-[90px] sm:max-w-[130px] truncate" onClick={onOpenProfile} title="Edit Profil">
+          <div className="flex items-center gap-1.5 cursor-pointer max-w-[80px] sm:max-w-[120px] truncate" onClick={onOpenProfile} title="Edit Profil">
             <User size={13} className="text-blue-400 flex-shrink-0" />
             <span className="font-semibold text-slate-200 text-xs truncate">{username}</span>
           </div>
           
-          <button 
-            onClick={onOpenProfile} 
-            className="text-slate-400 hover:text-blue-400 transition p-0.5" 
-            title="Pengaturan Profil"
-          >
+          <button onClick={onOpenProfile} className="text-slate-400 hover:text-blue-400 transition p-0.5" title="Pengaturan">
             <Settings size={12} />
           </button>
           
           <div className="h-3.5 w-[1px] bg-slate-700 mx-0.5"></div>
           
-          <button 
-            onClick={onLogout} 
-            className="text-rose-400 hover:text-rose-300 transition p-0.5" 
-            title="Keluar"
-          >
+          <button onClick={onLogout} className="text-rose-400 hover:text-rose-300 transition p-0.5" title="Keluar">
             <LogOut size={12} />
           </button>
         </div>

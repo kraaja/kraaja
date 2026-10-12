@@ -27,7 +27,7 @@ export default function TradingChart({ currentPair, currentPrice, priceChange24h
         horzLines: { color: "#1E293B" },
       },
       width: chartContainerRef.current.clientWidth,
-      height: isMobile ? 280 : 380,
+      height: isMobile ? 260 : 380,
       timeScale: { timeVisible: true, secondsVisible: false },
     });
 
@@ -39,7 +39,6 @@ export default function TradingChart({ currentPair, currentPrice, priceChange24h
       wickDownColor: "#F43F5E",
     });
 
-    // Dummy candlestick dataset
     candlestickSeries.setData([
       { time: "2026-10-01", open: currentPrice * 0.95, high: currentPrice * 0.98, low: currentPrice * 0.93, close: currentPrice * 0.96 },
       { time: "2026-10-02", open: currentPrice * 0.96, high: currentPrice * 1.01, low: currentPrice * 0.95, close: currentPrice * 0.99 },
@@ -53,7 +52,7 @@ export default function TradingChart({ currentPair, currentPrice, priceChange24h
     const handleResize = () => {
       chart.applyOptions({ 
         width: chartContainerRef.current?.clientWidth,
-        height: window.innerWidth < 768 ? 280 : 380
+        height: window.innerWidth < 768 ? 260 : 380
       });
     };
     window.addEventListener("resize", handleResize);
@@ -66,10 +65,10 @@ export default function TradingChart({ currentPair, currentPrice, priceChange24h
 
   return (
     <div className="w-full bg-slate-900/90 rounded-xl border border-slate-800/80 overflow-hidden shadow-xl">
-      <div className="p-3 border-b border-slate-800/80 flex items-center justify-between flex-wrap gap-2 bg-slate-950/30">
-        <div className="flex items-center gap-4">
+      <div className="p-2.5 sm:p-3 border-b border-slate-800/80 flex items-center justify-between flex-wrap gap-2 bg-slate-950/30">
+        <div className="flex items-center gap-3">
           <div>
-            <h2 className="text-base sm:text-lg font-black text-white font-mono">
+            <h2 className="text-sm sm:text-base font-black text-white font-mono">
               {currentPair}
             </h2>
             <p className="text-xs font-bold text-blue-400 font-mono">
@@ -77,13 +76,13 @@ export default function TradingChart({ currentPair, currentPrice, priceChange24h
             </p>
           </div>
           
-          {/* Timeframe Bar */}
-          <div className="hidden sm:flex items-center gap-1 bg-slate-950/60 p-1 rounded-lg border border-slate-800 text-[11px]">
+          {/* Timeframe Bar (Bisa digeser/scroll horizontal di HP) */}
+          <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-lg border border-slate-800 text-[11px] overflow-x-auto max-w-[180px] sm:max-w-none">
             {["1S", "1M", "15M", "1H", "4H", "1D"].map((tf) => (
               <button
                 key={tf}
                 onClick={() => setTimeframe(tf)}
-                className={`px-2 py-0.5 rounded transition ${timeframe === tf ? "bg-blue-600 text-white font-bold" : "text-slate-400 hover:text-white"}`}
+                className={`px-2 py-0.5 rounded transition whitespace-nowrap ${timeframe === tf ? "bg-blue-600 text-white font-bold" : "text-slate-400 hover:text-white"}`}
               >
                 {tf}
               </button>
@@ -91,17 +90,15 @@ export default function TradingChart({ currentPair, currentPrice, priceChange24h
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <p className="text-[10px] text-slate-400">Perubahan 24j</p>
-            <p className={`text-xs font-bold font-mono ${priceChange24h.amount >= 0 ? 'text-blue-400' : 'text-rose-500'}`}>
-              {priceChange24h.amount >= 0 ? '+' : ''}{priceChange24h.amount.toFixed(2)} ({priceChange24h.percent.toFixed(2)}%)
-            </p>
-          </div>
+        <div className="text-right">
+          <p className="text-[10px] text-slate-400">24j Chg</p>
+          <p className={`text-xs font-bold font-mono ${priceChange24h.amount >= 0 ? 'text-blue-400' : 'text-rose-500'}`}>
+            {priceChange24h.amount >= 0 ? '+' : ''}{priceChange24h.percent.toFixed(2)}%
+          </p>
         </div>
       </div>
       
-      <div className="p-1 sm:p-2">
+      <div className="p-1">
         <div ref={chartContainerRef} className="w-full" />
       </div>
     </div>
