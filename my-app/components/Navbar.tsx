@@ -28,27 +28,28 @@ export default function Navbar({
 
   return (
     <nav className="flex items-center justify-between px-2.5 sm:px-4 py-2.5 bg-slate-950 border-b border-slate-800/80 text-white text-sm sticky top-0 z-40">
-      {/* SISI KIRI: Logo & Market Selector */}
+      {/* SISI KIRI: Logo & Tombol Market Pair (BTC/USDT) */}
       <div className="flex items-center gap-2 sm:gap-4 overflow-hidden">
         <div className="flex items-center gap-1 flex-shrink-0">
           <Activity className="text-blue-500" size={18} />
-          <span className="text-sm sm:text-lg font-extrabold tracking-wider">
+          <span className="text-sm sm:text-lg font-extrabold tracking-wider hidden xs:inline">
             KRAA<span className="text-blue-500">TRD</span>
           </span>
         </div>
 
+        {/* Tombol Pemilih Market Pair yang Diperjelas */}
         <button 
           onClick={onOpenMarketModal}
-          className="flex items-center gap-1 bg-slate-900 border border-slate-800 hover:border-slate-700 px-2 py-1 rounded-lg transition text-xs font-bold flex-shrink-0"
+          className="flex items-center gap-1.5 bg-slate-900 border border-slate-700 hover:border-slate-500 px-2.5 py-1.5 rounded-lg transition text-xs font-bold flex-shrink-0 shadow-md"
+          title="Pilih Pasangan Market"
         >
-          <span className="text-blue-400 font-mono">{currentPair}</span>
-          <ChevronDown size={12} className="text-slate-400" />
+          <span className="text-blue-400 font-mono text-xs sm:text-sm">{currentPair}</span>
+          <ChevronDown size={13} className="text-slate-400" />
         </button>
       </div>
 
-      {/* SISI KANAN: Tombol Wallet (Deposit & Withdraw) & Profil */}
+      {/* SISI KANAN: Tombol Wallet (Deposit/Withdraw) & Profil */}
       <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
-        {/* Tombol Deposit */}
         <button 
           onClick={() => onOpenWalletModal('deposit')}
           className="flex items-center gap-1 px-2 py-1 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg text-[11px] font-semibold transition active:scale-95"
@@ -58,7 +59,6 @@ export default function Navbar({
           <span className="hidden xs:inline">Depo</span>
         </button>
 
-        {/* Tombol Withdraw */}
         <button 
           onClick={() => onOpenWalletModal('withdraw')}
           className="flex items-center gap-1 px-2 py-1 bg-slate-800 text-slate-300 border border-slate-700 rounded-lg text-[11px] font-semibold transition active:scale-95"
@@ -68,7 +68,6 @@ export default function Navbar({
           <span className="hidden xs:inline">Wd</span>
         </button>
 
-        {/* Kartu Profil Pengguna */}
         <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg shadow-sm">
           <div className="flex items-center gap-1.5 cursor-pointer max-w-[80px] sm:max-w-[120px] truncate" onClick={onOpenProfile} title="Edit Profil">
             <User size={13} className="text-blue-400 flex-shrink-0" />
