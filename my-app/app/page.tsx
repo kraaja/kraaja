@@ -75,7 +75,6 @@ export default function Home() {
   const [leftTab, setLeftTab] = useState<"orderbook" | "trades">("orderbook");
   const [mobileTab, setMobileTab] = useState<"chart" | "orderbook" | "trade">("chart");
 
-  // Helper untuk membaca JWT Token dari Google Login
   const parseJwt = (token: string) => {
     try {
       const base64Url = token.split('.')[1];
@@ -89,7 +88,6 @@ export default function Home() {
     }
   };
 
-  // Inisialisasi Google Identity Services (GIS)
   useEffect(() => {
     const handleGoogleResponse = (response: any) => {
       const profile = parseJwt(response.credential);
@@ -108,7 +106,6 @@ export default function Home() {
       }
     };
 
-    // Muat Script Google secara dinamis
     const script = document.createElement("script");
     script.src = "https://accounts.google.com/gsi/client";
     script.async = true;
@@ -125,7 +122,7 @@ export default function Home() {
           (window as any).google.accounts.id.renderButton(googleBtnContainer, {
             theme: "filled_black",
             size: "large",
-            width: "350",
+            width: "280", // Disesuaikan agar pas di layar HP
             text: "signin_with",
           });
         }
@@ -133,7 +130,6 @@ export default function Home() {
     };
     document.body.appendChild(script);
 
-    // Cek Sesi Lokal
     const savedSession = localStorage.getItem("kraa_session");
     if (savedSession) {
       const userData = JSON.parse(savedSession);
@@ -144,7 +140,6 @@ export default function Home() {
     }
   }, [isLoggedIn]);
 
-  // Auth Handler Manual
   const handleAuthSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
@@ -219,7 +214,6 @@ export default function Home() {
     showNotification("Profil berhasil diperbarui!", "success");
   };
 
-  // Wallet Deposit & Withdraw Handler
   const handleWalletSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const amt = parseFloat(walletAmount);
@@ -244,7 +238,6 @@ export default function Home() {
     setWalletAmount("");
   };
 
-  // Simulasi Market Live Price Ticker & Matching Engine
   useEffect(() => {
     if (!isLoggedIn) return;
 
@@ -385,7 +378,6 @@ export default function Home() {
     { price: currentPrice - 50, amount: "0.950" },
   ];
 
-  // HALAMAN LOGIN / REGISTER DENGAN GOOGLE ASLI
   if (!isLoggedIn) {
     return (
       <main className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 selection:bg-blue-500/30">
@@ -398,22 +390,22 @@ export default function Home() {
           </div>
         )}
 
-        <div className="w-full max-w-md bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl p-8 space-y-6">
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl font-black tracking-wider text-white">
+        <div className="w-full max-w-sm sm:max-w-md bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl p-6 sm:p-8 space-y-5">
+          <div className="text-center space-y-1.5">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-wider text-white">
               KRAA<span className="text-blue-500">TRADE</span>
             </h1>
             <p className="text-xs text-slate-400">Platform Bursa Kripto Profesional & Real-time Simulasi</p>
           </div>
 
-          {/* GOOGLE SIGN-IN BUTTON ASLI */}
-          <div className="flex justify-center w-full py-2">
-            <div id="google-signin-btn"></div>
+          {/* GOOGLE SIGN-IN BUTTON RESPONSIVE WRAPPER */}
+          <div className="flex justify-center w-full overflow-hidden py-1">
+            <div id="google-signin-btn" className="flex justify-center w-full scale-95 sm:scale-100"></div>
           </div>
 
           <div className="relative flex py-1 items-center">
             <div className="flex-grow border-t border-slate-800"></div>
-            <span className="flex-shrink mx-4 text-slate-500 text-[11px]">ATAU EMAIL MANUAL</span>
+            <span className="flex-shrink mx-3 text-slate-500 text-[10px]">ATAU EMAIL MANUAL</span>
             <div className="flex-grow border-t border-slate-800"></div>
           </div>
 
@@ -422,11 +414,11 @@ export default function Home() {
             <button onClick={() => setAuthMode("register")} className={`py-2 rounded-lg transition ${authMode === "register" ? "bg-blue-600 text-white shadow-md" : "text-slate-400 hover:text-white"}`}>Daftar Baru</button>
           </div>
 
-          <form onSubmit={handleAuthSubmit} className="space-y-4 text-xs">
+          <form onSubmit={handleAuthSubmit} className="space-y-3.5 text-xs">
             <div className="space-y-1">
               <label className="text-slate-400">Email</label>
               <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 focus-within:border-blue-500 transition">
-                <Mail size={16} className="text-slate-500 mr-2.5" />
+                <Mail size={16} className="text-slate-500 mr-2.5 flex-shrink-0" />
                 <input type="email" placeholder="nama@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className="bg-transparent outline-none w-full text-white text-sm" required />
               </div>
             </div>
@@ -434,7 +426,7 @@ export default function Home() {
             <div className="space-y-1">
               <label className="text-slate-400">Password</label>
               <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 focus-within:border-blue-500 transition">
-                <Lock size={16} className="text-slate-500 mr-2.5" />
+                <Lock size={16} className="text-slate-500 mr-2.5 flex-shrink-0" />
                 <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="bg-transparent outline-none w-full text-white text-sm" required />
               </div>
             </div>
@@ -445,14 +437,13 @@ export default function Home() {
           </form>
 
           <button onClick={handleDemoLogin} className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 transition flex items-center justify-center gap-2">
-            <ShieldCheck size={16} className="text-blue-400" /> Masuk Mode Demo Instan
+            <ShieldCheck size={16} className="text-blue-400 flex-shrink-0" /> Masuk Mode Demo Instan
           </button>
         </div>
       </main>
     );
   }
 
-  // APLIKASI TRADING UTAMA
   return (
     <main className="min-h-screen bg-slate-950 font-sans text-slate-100 flex flex-col pb-16 lg:pb-0">
       {notification && (
